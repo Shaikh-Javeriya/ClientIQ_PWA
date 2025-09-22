@@ -81,7 +81,7 @@ const ClientRevenueChart = ({ data }) => {
     datasets: [
       {
         label: 'Revenue',
-        data: sortedData.map(client => client.revenue),
+        data: sortedData.map(client => client.revenue || 0),
         backgroundColor: colors.medium,
         borderColor: colors.dark,
         borderWidth: 1,
