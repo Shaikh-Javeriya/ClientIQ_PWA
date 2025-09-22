@@ -335,8 +335,9 @@ async def create_client(client_data: dict, current_user: dict = Depends(get_curr
             "created_at": datetime.now(timezone.utc).isoformat()
         }
         
-        client_dict = prepare_for_mongo(client)
-        await db.clients.insert_one(client_dict)
+        client_dict = prepare_for_mongo(client.copy())
+        result = await db.clients.insert_one(client_dict)
+        # Return the original client data without MongoDB _id
         return client
     except Exception as e:
         print(f"Error creating client: {e}")
