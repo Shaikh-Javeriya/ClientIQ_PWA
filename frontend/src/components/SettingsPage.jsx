@@ -34,10 +34,7 @@ const SettingsPage = ({ user }) => {
     
     // Currency & Locale
     currency: 'USD',
-    locale: 'en-US',
-    
-    // Dark Mode
-    darkMode: false
+    locale: 'en-US'
   });
 
   const [hasChanges, setHasChanges] = useState(false);
