@@ -186,6 +186,28 @@ Your Account Team`;
     });
   };
 
+  const downloadCSVTemplate = () => {
+    const csvTemplate = `client_name,amount,hours_billed,invoice_date,due_date,status
+"TechCorp Solutions",6000,40,"2024-01-15","2024-02-14","paid"
+"Digital Marketing Pro",4500,30,"2024-02-01","2024-03-03","unpaid"
+"StartupXYZ",7200,48,"2024-02-15","2024-03-17","overdue"`;
+
+    const blob = new Blob([csvTemplate], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'invoices-template.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+
+    toast({
+      title: "Template Downloaded",
+      description: "CSV template downloaded. Fill it out and import your invoices.",
+    });
+  };
+
   const handleImportCSV = (event) => {
     const file = event.target.files[0];
     if (!file) return;
