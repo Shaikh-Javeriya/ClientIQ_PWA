@@ -85,9 +85,12 @@ const ClientsTable = ({ clients, onEdit, onDelete, onExport, onSendReminder }) =
                   <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
                     {(client.client_name || client.name || 'C').charAt(0)}
                   </div>
-                  <span className="cursor-pointer hover:text-blue-600 transition-colors">
+                  <Link 
+                    to={`/clients/${client.id || client.client_id}`}
+                    className="cursor-pointer hover:text-blue-600 transition-colors font-medium"
+                  >
                     {client.client_name || client.name || 'Unknown Client'}
-                  </span>
+                  </Link>
                 </div>
               </td>
               <td>
