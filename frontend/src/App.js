@@ -87,7 +87,33 @@ function App() {
               path="/"
               element={
                 user ? (
-                  <Dashboard user={user} onLogout={handleLogout} />
+                  <MainLayout user={user} onLogout={handleLogout}>
+                    <Dashboard user={user} />
+                  </MainLayout>
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route
+              path="/clients"
+              element={
+                user ? (
+                  <MainLayout user={user} onLogout={handleLogout}>
+                    <ClientsPage user={user} />
+                  </MainLayout>
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route
+              path="/invoices"
+              element={
+                user ? (
+                  <MainLayout user={user} onLogout={handleLogout}>
+                    <InvoicesPage user={user} />
+                  </MainLayout>
                 ) : (
                   <Navigate to="/login" replace />
                 )
