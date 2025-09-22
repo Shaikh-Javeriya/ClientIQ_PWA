@@ -87,11 +87,16 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         email: str = payload.get("sub")
         if email is None:
             raise credentials_exception
-    except JWTError:
+    except JWTError as e:
+        print(f"JWT Error: {e}")
+        raise credentials_exception
+    except Exception as e:
+        print(f"Auth Error: {e}")
         raise credentials_exception
     
     user = await db.users.find_one({"email": email})
     if user is None:
+        print(f"User not found: {email}")
         raise credentials_exception
     return user
 
