@@ -1,20 +1,28 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
-// Simple toast hook implementation
+// Simple toast hook implementation with better UX
 export const useToast = () => {
-  const toast = ({ title, description, variant = 'default' }) => {
-    // For now, we'll use a simple alert
-    // In production, you'd want to use a proper toast library like react-hot-toast or sonner
+  const [toasts, setToasts] = useState([]);
+
+  const toast = useCallback(({ title, description, variant = 'default' }) => {
     const message = description ? `${title}: ${description}` : title;
     
     if (variant === 'destructive') {
       console.error(message);
-      alert(`Error: ${message}`);
+      // Show error in console and as simple notification
+      if (window.confirm) {
+        setTimeout(() => {
+          alert(`❌ ${message}`);
+        }, 100);
+      }
     } else {
       console.log(message);
-      alert(message);
+      // Show success message
+      setTimeout(() => {
+        alert(`✅ ${message}`);
+      }, 100);
     }
-  };
+  }, []);
 
-  return { toast };
+  return { toast, toasts };
 };
