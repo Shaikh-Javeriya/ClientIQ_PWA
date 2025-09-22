@@ -4,6 +4,7 @@ import {
   BarChart3, 
   Users, 
   DollarSign, 
+  Settings,
   LogOut,
   RefreshCw
 } from 'lucide-react';
