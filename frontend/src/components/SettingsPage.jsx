@@ -46,10 +46,7 @@ const SettingsPage = ({ user }) => {
       try {
         const parsed = JSON.parse(savedSettings);
         setSettings(prev => ({ ...prev, ...parsed }));
-        // Apply dark mode immediately if it was saved
-        if (parsed.darkMode) {
-          applyDarkMode(parsed.darkMode);
-        }
+        // Dark mode removed
       } catch (error) {
         console.error('Error loading settings:', error);
       }
