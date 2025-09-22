@@ -378,19 +378,24 @@ Your Account Team`;
               </SelectContent>
             </Select>
 
-            <label htmlFor="csv-upload-invoices" className="cursor-pointer">
-              <Button type="button" variant="outline" className="flex items-center space-x-2">
+            <div className="relative">
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="flex items-center space-x-2"
+                onClick={() => document.getElementById('csv-upload-invoices').click()}
+              >
                 <Upload className="w-4 h-4" />
                 <span>Import CSV</span>
               </Button>
               <input
                 id="csv-upload-invoices"
                 type="file"
-                accept=".csv"
+                accept=".csv,.txt"
                 onChange={handleImportCSV}
-                className="hidden"
+                style={{ display: 'none' }}
               />
-            </label>
+            </div>
           </div>
         </CardContent>
       </Card>
