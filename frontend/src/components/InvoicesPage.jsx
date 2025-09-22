@@ -190,33 +190,56 @@ Your Account Team`;
     const file = event.target.files[0];
     if (!file) return;
 
+    toast({
+      title: "Processing CSV",
+      description: "Reading and importing invoice data...",
+    });
+
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const csv = e.target.result;
-        const lines = csv.split('\n');
-        const headers = lines[0].split(',').map(h => h.trim());
+        const lines = csv.split('\n').filter(line => line.trim());
         
-        // Expected headers: client_id, amount, hours_billed, invoice_date, due_date, status
+        if (lines.length <= 1) {
+          toast({
+            title: "Import Error",
+            description: "CSV file appears to be empty or contains only headers",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        // Expected headers: client_name_or_id, amount, hours_billed, invoice_date, due_date, status
         let importedCount = 0;
+        let errorCount = 0;
         
         for (let i = 1; i < lines.length; i++) {
           const line = lines[i].trim();
           if (!line) continue;
           
-          const values = line.split(',').map(v => v.trim());
-          if (values.length < 4) continue;
+          const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+          if (values.length < 4) {
+            errorCount++;
+            continue;
+          }
           
-          // Find client by name if client_id not provided
+          // Find client by name or ID
           let clientId = values[0];
           if (!clientId || !clientId.includes('-')) {
             // Try to find client by name
             const clientName = values[0];
-            const client = clients.find(c => c.name.toLowerCase().includes(clientName.toLowerCase()));
+            const client = clients.find(c => 
+              c.name?.toLowerCase().includes(clientName.toLowerCase()) ||
+              c.client_name?.toLowerCase().includes(clientName.toLowerCase())
+            );
             clientId = client ? client.id : '';
           }
           
-          if (!clientId) continue;
+          if (!clientId) {
+            errorCount++;
+            continue;
+          }
           
           const invoiceData = {
             client_id: clientId,
@@ -227,27 +250,25 @@ Your Account Team`;
             status: values[5] || 'unpaid'
           };
           
-          // Create invoice via API
-          axios.post(`${API}/invoices`, invoiceData)
-            .then(() => {
-              importedCount++;
-              if (importedCount === lines.length - 1) {
-                fetchData();
-                toast({
-                  title: "Import Successful",
-                  description: `Imported ${importedCount} invoices successfully`,
-                });
-              }
-            })
-            .catch(error => {
-              console.error('Error importing invoice:', error);
-            });
+          try {
+            await axios.post(`${API}/invoices`, invoiceData);
+            importedCount++;
+          } catch (error) {
+            console.error('Error importing invoice:', error);
+            errorCount++;
+          }
         }
         
-        if (lines.length <= 1) {
+        if (importedCount > 0) {
+          await fetchData();
           toast({
-            title: "Import Error",
-            description: "CSV file appears to be empty or invalid",
+            title: "Import Successful",
+            description: `Imported ${importedCount} invoices successfully${errorCount > 0 ? `. ${errorCount} rows had errors.` : '.'}`,
+          });
+        } else {
+          toast({
+            title: "Import Failed",
+            description: "No invoices could be imported. Please check your CSV format and client names.",
             variant: "destructive",
           });
         }
@@ -255,7 +276,7 @@ Your Account Team`;
         console.error('Error parsing CSV:', error);
         toast({
           title: "Import Error",
-          description: "Failed to parse CSV file",
+          description: "Failed to parse CSV file. Please check the format.",
           variant: "destructive",
         });
       }
