@@ -121,6 +121,30 @@ function App() {
                 )
               }
             />
+            <Route
+              path="/clients/:clientId"
+              element={
+                user ? (
+                  <MainLayout user={user} onLogout={handleLogout}>
+                    <ClientDrillthrough user={user} />
+                  </MainLayout>
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                user ? (
+                  <MainLayout user={user} onLogout={handleLogout}>
+                    <SettingsPage user={user} />
+                  </MainLayout>
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
           </Routes>
         </BrowserRouter>
       </div>
