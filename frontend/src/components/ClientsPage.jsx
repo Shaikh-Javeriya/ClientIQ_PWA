@@ -197,6 +197,74 @@ const ClientsPage = ({ user }) => {
     });
   };
 
+  const handleImportCSV = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const csv = e.target.result;
+        const lines = csv.split('\n');
+        const headers = lines[0].split(',').map(h => h.trim());
+        
+        // Expected headers: name, tier, region, contact_email, contact_phone, hourly_rate
+        let importedCount = 0;
+        
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+          
+          const values = line.split(',').map(v => v.trim());
+          if (values.length < 3) continue;
+          
+          const clientData = {
+            name: values[0] || `Client ${i}`,
+            tier: values[1] || 'SMB',
+            region: values[2] || 'North America',
+            contact_email: values[3] || '',
+            contact_phone: values[4] || '',
+            hourly_rate: parseFloat(values[5]) || 100
+          };
+          
+          // Create client via API
+          axios.post(`${API}/clients`, clientData)
+            .then(() => {
+              importedCount++;
+              if (importedCount === lines.length - 1) {
+                fetchClients();
+                toast({
+                  title: "Import Successful",
+                  description: `Imported ${importedCount} clients successfully`,
+                });
+              }
+            })
+            .catch(error => {
+              console.error('Error importing client:', error);
+            });
+        }
+        
+        if (lines.length <= 1) {
+          toast({
+            title: "Import Error",
+            description: "CSV file appears to be empty or invalid",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error('Error parsing CSV:', error);
+        toast({
+          title: "Import Error",
+          description: "Failed to parse CSV file",
+          variant: "destructive",
+        });
+      }
+    };
+    
+    reader.readAsText(file);
+    event.target.value = ''; // Reset file input
+  };
+
   const getUniqueValues = (field) => {
     const values = clients.map(client => client[field]).filter(Boolean);
     return [...new Set(values)];
