@@ -123,6 +123,18 @@ function App() {
               }
             />
             <Route
+              path="/client-details"
+              element={
+                user ? (
+                  <MainLayout user={user} onLogout={handleLogout}>
+                    <ClientDetailsPage user={user} />
+                  </MainLayout>
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route
               path="/clients/:clientId"
               element={
                 user ? (
