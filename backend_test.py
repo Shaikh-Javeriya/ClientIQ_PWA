@@ -195,6 +195,229 @@ class ClientProfitabilityAPITester:
         self.token = original_token  # Restore token
         return success
 
+    # NEW ENDPOINTS TESTING
+    def test_get_clients(self):
+        """Test get all clients endpoint"""
+        success, response = self.run_test(
+            "Get All Clients",
+            "GET",
+            "clients",
+            200
+        )
+        if success and isinstance(response, list):
+            print(f"   Found {len(response)} clients")
+            if response:
+                client = response[0]
+                expected_fields = ['id', 'name', 'tier', 'region', 'hourly_rate']
+                missing_fields = [field for field in expected_fields if field not in client]
+                if missing_fields:
+                    print(f"   ⚠️  Missing client fields: {missing_fields}")
+                else:
+                    print(f"   ✅ All client fields present")
+                    print(f"   Sample client: {client.get('name', 'Unknown')} - {client.get('tier', 'Unknown')} tier")
+        return success, response
+
+    def test_create_client(self):
+        """Test create new client endpoint"""
+        test_client = {
+            "name": "Test Client Corp",
+            "tier": "Enterprise",
+            "region": "North America",
+            "contact_email": "test@testclient.com",
+            "contact_phone": "+1-555-0123",
+            "hourly_rate": 150.0
+        }
+        
+        success, response = self.run_test(
+            "Create New Client",
+            "POST",
+            "clients",
+            200,
+            data=test_client
+        )
+        
+        if success:
+            print(f"   ✅ Created client: {response.get('name', 'Unknown')}")
+            return success, response.get('id')
+        return success, None
+
+    def test_update_client(self, client_id):
+        """Test update client endpoint"""
+        if not client_id:
+            print("   ⚠️  No client ID provided for update test")
+            return False
+            
+        updated_client = {
+            "id": client_id,
+            "name": "Updated Test Client Corp",
+            "tier": "SMB",
+            "region": "Europe",
+            "contact_email": "updated@testclient.com",
+            "contact_phone": "+44-555-0123",
+            "hourly_rate": 175.0
+        }
+        
+        success, response = self.run_test(
+            "Update Client",
+            "PUT",
+            f"clients/{client_id}",
+            200,
+            data=updated_client
+        )
+        
+        if success:
+            print(f"   ✅ Updated client: {response.get('name', 'Unknown')}")
+        return success
+
+    def test_delete_client(self, client_id):
+        """Test delete client endpoint"""
+        if not client_id:
+            print("   ⚠️  No client ID provided for delete test")
+            return False
+            
+        success, response = self.run_test(
+            "Delete Client",
+            "DELETE",
+            f"clients/{client_id}",
+            200
+        )
+        
+        if success:
+            print(f"   ✅ Deleted client successfully")
+        return success
+
+    def test_get_invoices(self):
+        """Test get all invoices endpoint"""
+        success, response = self.run_test(
+            "Get All Invoices",
+            "GET",
+            "invoices",
+            200
+        )
+        if success and isinstance(response, list):
+            print(f"   Found {len(response)} invoices")
+            if response:
+                invoice = response[0]
+                expected_fields = ['id', 'client_id', 'amount', 'hours_billed', 'status', 'invoice_date', 'due_date']
+                missing_fields = [field for field in expected_fields if field not in invoice]
+                if missing_fields:
+                    print(f"   ⚠️  Missing invoice fields: {missing_fields}")
+                else:
+                    print(f"   ✅ All invoice fields present")
+                    print(f"   Sample invoice: ${invoice.get('amount', 0):,.2f} - {invoice.get('status', 'Unknown')}")
+        return success, response
+
+    def test_create_invoice(self, client_id):
+        """Test create new invoice endpoint"""
+        if not client_id:
+            print("   ⚠️  No client ID provided for invoice creation")
+            return False, None
+            
+        test_invoice = {
+            "client_id": client_id,
+            "amount": 2500.0,
+            "hours_billed": 25.0,
+            "invoice_date": datetime.now().isoformat(),
+            "due_date": (datetime.now() + timedelta(days=30)).isoformat(),
+            "status": "unpaid"
+        }
+        
+        success, response = self.run_test(
+            "Create New Invoice",
+            "POST",
+            "invoices",
+            200,
+            data=test_invoice
+        )
+        
+        if success:
+            print(f"   ✅ Created invoice: ${response.get('amount', 0):,.2f}")
+            return success, response.get('id')
+        return success, None
+
+    def test_update_invoice(self, invoice_id):
+        """Test update invoice endpoint"""
+        if not invoice_id:
+            print("   ⚠️  No invoice ID provided for update test")
+            return False
+            
+        updated_invoice = {
+            "id": invoice_id,
+            "client_id": "test-client-id",
+            "amount": 3000.0,
+            "hours_billed": 30.0,
+            "invoice_date": datetime.now().isoformat(),
+            "due_date": (datetime.now() + timedelta(days=30)).isoformat(),
+            "status": "unpaid"
+        }
+        
+        success, response = self.run_test(
+            "Update Invoice",
+            "PUT",
+            f"invoices/{invoice_id}",
+            200,
+            data=updated_invoice
+        )
+        
+        if success:
+            print(f"   ✅ Updated invoice: ${response.get('amount', 0):,.2f}")
+        return success
+
+    def test_mark_invoice_paid(self, invoice_id):
+        """Test mark invoice as paid endpoint"""
+        if not invoice_id:
+            print("   ⚠️  No invoice ID provided for mark paid test")
+            return False
+            
+        success, response = self.run_test(
+            "Mark Invoice as Paid",
+            "PUT",
+            f"invoices/{invoice_id}/mark-paid",
+            200
+        )
+        
+        if success:
+            print(f"   ✅ Marked invoice as paid")
+        return success
+
+    def test_delete_invoice(self, invoice_id):
+        """Test delete invoice endpoint"""
+        if not invoice_id:
+            print("   ⚠️  No invoice ID provided for delete test")
+            return False
+            
+        success, response = self.run_test(
+            "Delete Invoice",
+            "DELETE",
+            f"invoices/{invoice_id}",
+            200
+        )
+        
+        if success:
+            print(f"   ✅ Deleted invoice successfully")
+        return success
+
+    def test_get_ar_aging(self):
+        """Test AR aging endpoint"""
+        success, response = self.run_test(
+            "Get AR Aging Data",
+            "GET",
+            "invoices/ar-aging",
+            200
+        )
+        if success and isinstance(response, dict):
+            expected_buckets = ['0-30', '31-60', '61-90', '90+']
+            missing_buckets = [bucket for bucket in expected_buckets if bucket not in response]
+            if missing_buckets:
+                print(f"   ⚠️  Missing AR aging buckets: {missing_buckets}")
+            else:
+                print(f"   ✅ All AR aging buckets present")
+                total_ar = sum(response.values())
+                print(f"   Total Outstanding AR: ${total_ar:,.2f}")
+                for bucket, amount in response.items():
+                    print(f"   {bucket} days: ${amount:,.2f}")
+        return success
+
 def main():
     print("🚀 Starting Client Profitability Dashboard API Tests")
     print("=" * 60)
