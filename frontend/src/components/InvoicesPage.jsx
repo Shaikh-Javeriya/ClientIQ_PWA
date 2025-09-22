@@ -163,6 +163,85 @@ const InvoicesPage = ({ user }) => {
     });
   };
 
+  const handleImportCSV = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const csv = e.target.result;
+        const lines = csv.split('\n');
+        const headers = lines[0].split(',').map(h => h.trim());
+        
+        // Expected headers: client_id, amount, hours_billed, invoice_date, due_date, status
+        let importedCount = 0;
+        
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+          
+          const values = line.split(',').map(v => v.trim());
+          if (values.length < 4) continue;
+          
+          // Find client by name if client_id not provided
+          let clientId = values[0];
+          if (!clientId || !clientId.includes('-')) {
+            // Try to find client by name
+            const clientName = values[0];
+            const client = clients.find(c => c.name.toLowerCase().includes(clientName.toLowerCase()));
+            clientId = client ? client.id : '';
+          }
+          
+          if (!clientId) continue;
+          
+          const invoiceData = {
+            client_id: clientId,
+            amount: parseFloat(values[1]) || 0,
+            hours_billed: parseFloat(values[2]) || 0,
+            invoice_date: values[3] || new Date().toISOString(),
+            due_date: values[4] || new Date(Date.now() + 30*24*60*60*1000).toISOString(),
+            status: values[5] || 'unpaid'
+          };
+          
+          // Create invoice via API
+          axios.post(`${API}/invoices`, invoiceData)
+            .then(() => {
+              importedCount++;
+              if (importedCount === lines.length - 1) {
+                fetchData();
+                toast({
+                  title: "Import Successful",
+                  description: `Imported ${importedCount} invoices successfully`,
+                });
+              }
+            })
+            .catch(error => {
+              console.error('Error importing invoice:', error);
+            });
+        }
+        
+        if (lines.length <= 1) {
+          toast({
+            title: "Import Error",
+            description: "CSV file appears to be empty or invalid",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error('Error parsing CSV:', error);
+        toast({
+          title: "Import Error",
+          description: "Failed to parse CSV file",
+          variant: "destructive",
+        });
+      }
+    };
+    
+    reader.readAsText(file);
+    event.target.value = ''; // Reset file input
+  };
+
   const handleInvoiceSaved = () => {
     setShowInvoiceModal(false);
     fetchData();
