@@ -13,12 +13,69 @@
   --color-warning: #F59E0B;
   --color-success: #16A34A;
   
-  /* Background and Text */
+  /* Light Mode Colors */
   --bg-primary: #FFFFFF;
   --bg-secondary: #F8FAFC;
   --text-primary: #1F2937;
   --text-secondary: #6B7280;
   --border-color: #E5E7EB;
+  --card-bg: #FFFFFF;
+  --card-border: #E5E7EB;
+}
+
+/* Dark Mode Colors */
+.dark {
+  --bg-primary: #1F2937;
+  --bg-secondary: #111827;
+  --text-primary: #F9FAFB;
+  --text-secondary: #D1D5DB;
+  --border-color: #374151;
+  --card-bg: #374151;
+  --card-border: #4B5563;
+}
+
+/* Dark mode specific styles */
+.dark body {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.dark .glass-card {
+  background: rgba(55, 65, 81, 0.8);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(75, 85, 99, 0.2);
+  color: var(--text-primary);
+}
+
+.dark .kpi-card {
+  background: var(--card-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--card-border);
+}
+
+.dark .chart-container {
+  background: var(--card-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--card-border);
+}
+
+.dark .data-table {
+  background: var(--card-bg);
+  color: var(--text-primary);
+}
+
+.dark .data-table thead {
+  background: var(--theme-gradient);
+  color: white;
+}
+
+.dark .data-table td,
+.dark .data-table th {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.dark .data-table tbody tr:hover {
+  background-color: rgba(75, 85, 99, 0.3);
 }
 
 /* Green Gradient Theme */
