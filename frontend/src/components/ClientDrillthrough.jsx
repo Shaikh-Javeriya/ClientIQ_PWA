@@ -27,8 +27,9 @@ import { useToast } from './ui/use-toast';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-const ClientDrillthrough = () => {
-  const { clientId } = useParams();
+const ClientDrillthrough = ({ clientId: propClientId, embedded = false }) => {
+  const { clientId: paramClientId } = useParams();
+  const clientId = propClientId || paramClientId;
   const [clientDetails, setClientDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showProjectModal, setShowProjectModal] = useState(false);
