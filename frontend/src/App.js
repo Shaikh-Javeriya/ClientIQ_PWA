@@ -9,6 +9,7 @@ import Dashboard from './components/Dashboard';
 import ClientsPage from './components/ClientsPage';
 import InvoicesPage from './components/InvoicesPage';
 import ClientDrillthrough from './components/ClientDrillthrough';
+import ClientDetailsPage from './components/ClientDetailsPage';
 import SettingsPage from './components/SettingsPage';
 import MainLayout from './components/MainLayout';
 import ThemeProvider from './components/ThemeProvider';
