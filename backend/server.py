@@ -418,8 +418,9 @@ async def create_invoice(invoice_data: dict, current_user: dict = Depends(get_cu
             "created_at": datetime.now(timezone.utc).isoformat()
         }
         
-        invoice_dict = prepare_for_mongo(invoice)
-        await db.invoices.insert_one(invoice_dict)
+        invoice_dict = prepare_for_mongo(invoice.copy())
+        result = await db.invoices.insert_one(invoice_dict)
+        # Return the original invoice data without MongoDB _id
         return invoice
     except Exception as e:
         print(f"Error creating invoice: {e}")
