@@ -675,12 +675,75 @@ def main():
         print(f"❌ Invoices testing - Exception: {str(e)}")
         failed_tests.append("Invoices CRUD")
 
+    # Test new Projects endpoints
+    print(f"\n{'='*60}")
+    print("📋 TESTING PROJECTS ENDPOINTS")
+    print(f"{'='*60}")
+    
+    project_id = None
+    try:
+        # Get existing projects
+        success, projects = tester.test_get_projects()
+        if not success:
+            failed_tests.append("Get Projects")
+        
+        # Use existing client or create one for project testing
+        test_client_id = client_id
+        if not test_client_id and projects:
+            test_client_id = projects[0].get('client_id')
+        
+        # Create new project
+        if test_client_id:
+            success, new_project_id = tester.test_create_project(test_client_id)
+            if success:
+                project_id = new_project_id
+            else:
+                failed_tests.append("Create Project")
+        
+        # Update project (if we have an ID)
+        if project_id:
+            if not tester.test_update_project(project_id):
+                failed_tests.append("Update Project")
+        
+    except Exception as e:
+        print(f"❌ Projects testing - Exception: {str(e)}")
+        failed_tests.append("Projects CRUD")
+
+    # Test Client Details endpoint (for drillthrough page)
+    print(f"\n{'='*60}")
+    print("🔍 TESTING CLIENT DETAILS ENDPOINT")
+    print(f"{'='*60}")
+    
+    try:
+        # Use existing client or get first available client
+        test_client_id = client_id
+        if not test_client_id:
+            success, clients = tester.test_get_clients()
+            if success and clients:
+                test_client_id = clients[0].get('id')
+        
+        if test_client_id:
+            if not tester.test_get_client_details(test_client_id):
+                failed_tests.append("Get Client Details")
+        else:
+            print("   ⚠️  No client available for details testing")
+            failed_tests.append("Get Client Details - No Client Available")
+        
+    except Exception as e:
+        print(f"❌ Client Details testing - Exception: {str(e)}")
+        failed_tests.append("Client Details")
+
     # Test cleanup - delete created resources
     print(f"\n{'='*60}")
     print("🧹 CLEANUP - DELETING TEST DATA")
     print(f"{'='*60}")
     
     try:
+        # Delete test project
+        if project_id:
+            if not tester.test_delete_project(project_id):
+                failed_tests.append("Delete Project")
+        
         # Delete test invoice
         if invoice_id:
             if not tester.test_delete_invoice(invoice_id):
