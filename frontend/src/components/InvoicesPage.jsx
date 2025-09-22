@@ -255,10 +255,19 @@ const InvoicesPage = ({ user }) => {
               </SelectContent>
             </Select>
 
-            <Button variant="outline" className="flex items-center space-x-2">
-              <Upload className="w-4 h-4" />
-              <span>Import CSV</span>
-            </Button>
+            <label htmlFor="csv-upload-invoices" className="cursor-pointer">
+              <Button type="button" variant="outline" className="flex items-center space-x-2">
+                <Upload className="w-4 h-4" />
+                <span>Import CSV</span>
+              </Button>
+              <input
+                id="csv-upload-invoices"
+                type="file"
+                accept=".csv"
+                onChange={handleImportCSV}
+                className="hidden"
+              />
+            </label>
           </div>
         </CardContent>
       </Card>
