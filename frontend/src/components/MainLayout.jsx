@@ -17,6 +17,7 @@ const MainLayout = ({ user, onLogout, children }) => {
   const navigation = [
     { name: 'Overview', path: '/', icon: BarChart3 },
     { name: 'Clients', path: '/clients', icon: Users },
+    { name: 'Client Details', path: '/client-details', icon: User },
     { name: 'Invoices', path: '/invoices', icon: DollarSign },
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
