@@ -1,0 +1,178 @@
+import React from 'react';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js';
+import { Bar } from 'react-chartjs-2';
+import { useTheme } from './ThemeProvider';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+const ClientRevenueChart = ({ data }) => {
+  const { getThemeColors } = useTheme();
+  const colors = getThemeColors();
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="h-64 flex items-center justify-center text-gray-500">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 opacity-20">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M22 9v6c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V9c0-1.1.9-2 2-2h16c1.1 0 2 .9 2 2zm-4 0v6h2V9h-2zm-2 0H8v6h8V9zm-10 0H4v6h2V9z"/>
+            </svg>
+          </div>
+          <p>No client data available</p>
+        </div>
+      </div>
+    );
+  }
+
+  const sortedData = [...data]
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 10);
+
+  const chartData = {
+    labels: sortedData.map(client => {
+      const name = client.client_name;
+      return name.length > 15 ? name.substring(0, 15) + '...' : name;
+    }),
+    datasets: [
+      {
+        label: 'Revenue',
+        data: sortedData.map(client => client.revenue),
+        backgroundColor: colors.medium,
+        borderColor: colors.dark,
+        borderWidth: 1,
+        borderRadius: 6,
+        borderSkipped: false,
+      },
+      {
+        label: 'Hours Worked',
+        data: sortedData.map(client => client.hours_worked * 100), // Scale for visibility
+        backgroundColor: colors.light,
+        borderColor: colors.medium,
+        borderWidth: 1,
+        borderRadius: 6,
+        borderSkipped: false,
+        yAxisID: 'y1'
+      }
+    ]
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: {
+      mode: 'index',
+      intersect: false,
+    },
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
+          usePointStyle: true,
+          padding: 20,
+          font: {
+            family: 'Inter',
+            weight: '500'
+          }
+        }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        titleColor: '#1F2937',
+        bodyColor: '#1F2937',
+        borderColor: '#E5E7EB',
+        borderWidth: 1,
+        cornerRadius: 8,
+        displayColors: true,
+        callbacks: {
+          label: function(context) {
+            if (context.datasetIndex === 0) {
+              const value = new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 0
+              }).format(context.parsed.y);
+              return `Revenue: ${value}`;
+            } else {
+              const hours = context.parsed.y / 100;
+              return `Hours: ${hours.toFixed(1)}h`;
+            }
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: {
+          display: false
+        },
+        ticks: {
+          maxRotation: 45,
+          minRotation: 45,
+          font: {
+            family: 'Inter',
+            size: 11
+          }
+        }
+      },
+      y: {
+        type: 'linear',
+        display: true,
+        position: 'left',
+        grid: {
+          color: '#F3F4F6'
+        },
+        ticks: {
+          font: {
+            family: 'Inter'
+          },
+          callback: function(value) {
+            return new Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: 'USD',
+              notation: 'compact'
+            }).format(value);
+          }
+        }
+      },
+      y1: {
+        type: 'linear',
+        display: true,
+        position: 'right',
+        grid: {
+          drawOnChartArea: false,
+        },
+        ticks: {
+          font: {
+            family: 'Inter'
+          },
+          callback: function(value) {
+            return `${(value / 100).toFixed(0)}h`;
+          }
+        }
+      }
+    }
+  };
+
+  return (
+    <div className="h-64">
+      <Bar data={chartData} options={options} />
+    </div>
+  );
+};
+
+export default ClientRevenueChart;
