@@ -18,6 +18,7 @@ const MainLayout = ({ user, onLogout, children }) => {
     { name: 'Overview', path: '/', icon: BarChart3 },
     { name: 'Clients', path: '/clients', icon: Users },
     { name: 'Invoices', path: '/invoices', icon: DollarSign },
+    { name: 'Settings', path: '/settings', icon: Settings },
   ];
 
   const isActive = (path) => {
