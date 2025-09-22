@@ -215,6 +215,28 @@ Your Account Team`;
     });
   };
 
+  const downloadCSVTemplate = () => {
+    const csvTemplate = `name,tier,region,contact_email,contact_phone,hourly_rate
+"Sample Client 1",SMB,"North America","client1@example.com","+1-555-123-4567",120
+"Sample Client 2",Enterprise,"Europe","client2@example.com","+44-20-1234-5678",180
+"Sample Client 3",Freelance,"Asia Pacific","client3@example.com","+81-3-1234-5678",95`;
+
+    const blob = new Blob([csvTemplate], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'clients-template.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+
+    toast({
+      title: "Template Downloaded",
+      description: "CSV template downloaded. Fill it out and import your clients.",
+    });
+  };
+
   const handleImportCSV = (event) => {
     const file = event.target.files[0];
     if (!file) return;
