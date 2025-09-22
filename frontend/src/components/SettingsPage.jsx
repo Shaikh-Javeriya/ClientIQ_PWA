@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Switch } from './ui/switch';
 import { useTheme } from './ThemeProvider';
 import { useToast } from './ui/use-toast';
+import ThemeSelector from './ThemeSelector';
 
 const SettingsPage = ({ user }) => {
   const { currentTheme, themes, switchTheme } = useTheme();
