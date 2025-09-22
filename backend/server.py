@@ -298,6 +298,99 @@ async def generate_sample_data(current_user: dict = Depends(get_current_user)):
     
     return {"message": "Sample data generated successfully"}
 
+# CRUD endpoints for clients
+@api_router.get("/clients", response_model=List[Client])
+async def get_clients(current_user: dict = Depends(get_current_user)):
+    clients = await db.clients.find().to_list(length=None)
+    return [Client(**client) for client in clients]
+
+@api_router.post("/clients", response_model=Client)
+async def create_client(client_data: Client, current_user: dict = Depends(get_current_user)):
+    client_dict = prepare_for_mongo(client_data.dict())
+    await db.clients.insert_one(client_dict)
+    return client_data
+
+@api_router.put("/clients/{client_id}", response_model=Client)
+async def update_client(client_id: str, client_data: Client, current_user: dict = Depends(get_current_user)):
+    client_dict = prepare_for_mongo(client_data.dict())
+    await db.clients.update_one({"id": client_id}, {"$set": client_dict})
+    return client_data
+
+@api_router.delete("/clients/{client_id}")
+async def delete_client(client_id: str, current_user: dict = Depends(get_current_user)):
+    # Delete client and associated projects and invoices
+    await db.clients.delete_one({"id": client_id})
+    await db.projects.delete_many({"client_id": client_id})
+    await db.invoices.delete_many({"client_id": client_id})
+    return {"message": "Client deleted successfully"}
+
+# CRUD endpoints for invoices
+@api_router.get("/invoices", response_model=List[Invoice])
+async def get_invoices(current_user: dict = Depends(get_current_user)):
+    invoices = await db.invoices.find().to_list(length=None)
+    parsed_invoices = []
+    for invoice in invoices:
+        parsed_invoice = parse_from_mongo(invoice)
+        parsed_invoices.append(Invoice(**parsed_invoice))
+    return parsed_invoices
+
+@api_router.post("/invoices", response_model=Invoice)
+async def create_invoice(invoice_data: Invoice, current_user: dict = Depends(get_current_user)):
+    invoice_dict = prepare_for_mongo(invoice_data.dict())
+    await db.invoices.insert_one(invoice_dict)
+    return invoice_data
+
+@api_router.put("/invoices/{invoice_id}", response_model=Invoice)
+async def update_invoice(invoice_id: str, invoice_data: Invoice, current_user: dict = Depends(get_current_user)):
+    invoice_dict = prepare_for_mongo(invoice_data.dict())
+    await db.invoices.update_one({"id": invoice_id}, {"$set": invoice_dict})
+    return invoice_data
+
+@api_router.delete("/invoices/{invoice_id}")
+async def delete_invoice(invoice_id: str, current_user: dict = Depends(get_current_user)):
+    await db.invoices.delete_one({"id": invoice_id})
+    return {"message": "Invoice deleted successfully"}
+
+@api_router.put("/invoices/{invoice_id}/mark-paid")
+async def mark_invoice_paid(invoice_id: str, current_user: dict = Depends(get_current_user)):
+    await db.invoices.update_one(
+        {"id": invoice_id}, 
+        {"$set": {
+            "status": "paid",
+            "paid_date": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    return {"message": "Invoice marked as paid"}
+
+# AR Aging endpoint
+@api_router.get("/invoices/ar-aging")
+async def get_ar_aging(current_user: dict = Depends(get_current_user)):
+    unpaid_invoices = await db.invoices.find({"status": {"$in": ["unpaid", "overdue"]}}).to_list(length=None)
+    
+    aging_buckets = {
+        "0-30": 0,
+        "31-60": 0,
+        "61-90": 0,
+        "90+": 0
+    }
+    
+    current_date = datetime.now(timezone.utc)
+    
+    for invoice in unpaid_invoices:
+        due_date = datetime.fromisoformat(invoice["due_date"].replace('Z', '+00:00'))
+        days_overdue = (current_date - due_date).days
+        
+        if days_overdue <= 30:
+            aging_buckets["0-30"] += invoice["amount"]
+        elif days_overdue <= 60:
+            aging_buckets["31-60"] += invoice["amount"]
+        elif days_overdue <= 90:
+            aging_buckets["61-90"] += invoice["amount"]
+        else:
+            aging_buckets["90+"] += invoice["amount"]
+    
+    return aging_buckets
+
 # Dashboard endpoints
 @api_router.get("/dashboard/kpis", response_model=KPIResponse)
 async def get_kpis(current_user: dict = Depends(get_current_user)):
