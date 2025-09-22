@@ -68,8 +68,6 @@ const MainLayout = ({ user, onLogout, children }) => {
             </div>
 
             <div className="flex items-center space-x-4">
-              <ThemeSelector />
-              
               <Button
                 onClick={() => window.location.reload()}
                 variant="outline"
