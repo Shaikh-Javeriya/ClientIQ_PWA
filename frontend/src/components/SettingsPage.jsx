@@ -163,24 +163,7 @@ const SettingsPage = ({ user }) => {
               </div>
             </div>
 
-            {/* Dark Mode */}
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                {settings.darkMode ? (
-                  <Moon className="w-5 h-5 text-gray-600" />
-                ) : (
-                  <Sun className="w-5 h-5 text-gray-600" />
-                )}
-                <div>
-                  <Label className="text-base font-medium">Dark Mode</Label>
-                  <p className="text-sm text-gray-600">Switch to dark background theme</p>
-                </div>
-              </div>
-              <Switch
-                checked={settings.darkMode}
-                onCheckedChange={(checked) => handleSettingChange('darkMode', checked)}
-              />
-            </div>
+            {/* Dark mode section removed */}
           </CardContent>
         </Card>
 
