@@ -378,7 +378,7 @@ Your Account Team`;
               </SelectContent>
             </Select>
 
-            <div className="relative">
+            <div className="flex items-center space-x-2">
               <Button 
                 type="button" 
                 variant="outline" 
@@ -387,6 +387,16 @@ Your Account Team`;
               >
                 <Upload className="w-4 h-4" />
                 <span>Import CSV</span>
+              </Button>
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="sm"
+                onClick={downloadCSVTemplate}
+                className="text-xs"
+                title="Download CSV Template"
+              >
+                Template
               </Button>
               <input
                 id="csv-upload-invoices"
