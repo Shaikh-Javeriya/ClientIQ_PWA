@@ -1,7 +1,7 @@
 import requests
 import sys
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class ClientProfitabilityAPITester:
     def __init__(self, base_url="https://profitpulse-4.preview.emergentagent.com/api"):
