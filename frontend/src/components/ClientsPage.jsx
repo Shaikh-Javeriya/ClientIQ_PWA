@@ -219,22 +219,39 @@ Your Account Team`;
     const file = event.target.files[0];
     if (!file) return;
 
+    toast({
+      title: "Processing CSV",
+      description: "Reading and importing client data...",
+    });
+
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const csv = e.target.result;
-        const lines = csv.split('\n');
-        const headers = lines[0].split(',').map(h => h.trim());
+        const lines = csv.split('\n').filter(line => line.trim());
+        
+        if (lines.length <= 1) {
+          toast({
+            title: "Import Error",
+            description: "CSV file appears to be empty or contains only headers",
+            variant: "destructive",
+          });
+          return;
+        }
         
         // Expected headers: name, tier, region, contact_email, contact_phone, hourly_rate
         let importedCount = 0;
+        let errorCount = 0;
         
         for (let i = 1; i < lines.length; i++) {
           const line = lines[i].trim();
           if (!line) continue;
           
-          const values = line.split(',').map(v => v.trim());
-          if (values.length < 3) continue;
+          const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+          if (values.length < 3) {
+            errorCount++;
+            continue;
+          }
           
           const clientData = {
             name: values[0] || `Client ${i}`,
@@ -245,27 +262,25 @@ Your Account Team`;
             hourly_rate: parseFloat(values[5]) || 100
           };
           
-          // Create client via API
-          axios.post(`${API}/clients`, clientData)
-            .then(() => {
-              importedCount++;
-              if (importedCount === lines.length - 1) {
-                fetchClients();
-                toast({
-                  title: "Import Successful",
-                  description: `Imported ${importedCount} clients successfully`,
-                });
-              }
-            })
-            .catch(error => {
-              console.error('Error importing client:', error);
-            });
+          try {
+            await axios.post(`${API}/clients`, clientData);
+            importedCount++;
+          } catch (error) {
+            console.error('Error importing client:', error);
+            errorCount++;
+          }
         }
         
-        if (lines.length <= 1) {
+        if (importedCount > 0) {
+          await fetchClients();
           toast({
-            title: "Import Error",
-            description: "CSV file appears to be empty or invalid",
+            title: "Import Successful",
+            description: `Imported ${importedCount} clients successfully${errorCount > 0 ? `. ${errorCount} rows had errors.` : '.'}`,
+          });
+        } else {
+          toast({
+            title: "Import Failed",
+            description: "No clients could be imported. Please check your CSV format.",
             variant: "destructive",
           });
         }
@@ -273,7 +288,7 @@ Your Account Team`;
         console.error('Error parsing CSV:', error);
         toast({
           title: "Import Error",
-          description: "Failed to parse CSV file",
+          description: "Failed to parse CSV file. Please check the format.",
           variant: "destructive",
         });
       }
