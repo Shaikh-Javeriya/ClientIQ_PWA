@@ -424,24 +424,35 @@ def main():
     
     # Setup
     tester = ClientProfitabilityAPITester()
-    test_email = f"test_user_{datetime.now().strftime('%H%M%S')}@example.com"
-    test_password = "TestPass123!"
-    test_name = "Test User"
+    
+    # Try to login with existing test user first
+    existing_email = "john.doe.test@example.com"
+    existing_password = "TestPassword123!"
+    
+    print(f"\n🔍 Testing Login with existing user: {existing_email}")
+    login_success = tester.test_login(existing_email, existing_password)
+    
+    if not login_success:
+        # If existing user login fails, create a new test user
+        test_email = f"test_user_{datetime.now().strftime('%H%M%S')}@example.com"
+        test_password = "TestPass123!"
+        test_name = "Test User"
+        print(f"\n🔍 Creating new test user: {test_email}")
+        if not tester.test_register(test_email, test_password, test_name):
+            print("❌ Failed to create test user, stopping tests")
+            return 1
 
-    # Test sequence
-    tests_to_run = [
+    # Test basic dashboard endpoints
+    basic_tests = [
         ("Root Endpoint", lambda: tester.test_root_endpoint()),
-        ("User Registration", lambda: tester.test_register(test_email, test_password, test_name)),
         ("Generate Sample Data", lambda: tester.test_generate_sample_data()),
         ("Get KPIs", lambda: tester.test_get_kpis()),
         ("Get Client Profitability", lambda: tester.test_get_client_profitability()),
         ("Get Revenue by Month", lambda: tester.test_get_revenue_by_month()),
-        ("Unauthorized Access", lambda: tester.test_unauthorized_access()),
     ]
 
-    # Run tests
     failed_tests = []
-    for test_name, test_func in tests_to_run:
+    for test_name, test_func in basic_tests:
         try:
             if not test_func():
                 failed_tests.append(test_name)
@@ -449,10 +460,102 @@ def main():
             print(f"❌ {test_name} - Exception: {str(e)}")
             failed_tests.append(test_name)
 
-    # Test login with existing user
-    print(f"\n🔍 Testing Login with existing user...")
-    if not tester.test_login(test_email, test_password):
-        failed_tests.append("User Login")
+    # Test new Clients endpoints
+    print(f"\n{'='*60}")
+    print("🏢 TESTING CLIENTS ENDPOINTS")
+    print(f"{'='*60}")
+    
+    client_id = None
+    try:
+        # Get existing clients
+        success, clients = tester.test_get_clients()
+        if not success:
+            failed_tests.append("Get Clients")
+        
+        # Create new client
+        success, new_client_id = tester.test_create_client()
+        if success:
+            client_id = new_client_id
+        else:
+            failed_tests.append("Create Client")
+        
+        # Update client (if we have an ID)
+        if client_id:
+            if not tester.test_update_client(client_id):
+                failed_tests.append("Update Client")
+        
+    except Exception as e:
+        print(f"❌ Clients testing - Exception: {str(e)}")
+        failed_tests.append("Clients CRUD")
+
+    # Test new Invoices endpoints
+    print(f"\n{'='*60}")
+    print("📄 TESTING INVOICES ENDPOINTS")
+    print(f"{'='*60}")
+    
+    invoice_id = None
+    try:
+        # Get existing invoices
+        success, invoices = tester.test_get_invoices()
+        if not success:
+            failed_tests.append("Get Invoices")
+        
+        # Use existing client or create one for invoice testing
+        test_client_id = client_id
+        if not test_client_id and invoices:
+            test_client_id = invoices[0].get('client_id')
+        
+        # Create new invoice
+        if test_client_id:
+            success, new_invoice_id = tester.test_create_invoice(test_client_id)
+            if success:
+                invoice_id = new_invoice_id
+            else:
+                failed_tests.append("Create Invoice")
+        
+        # Update invoice (if we have an ID)
+        if invoice_id:
+            if not tester.test_update_invoice(invoice_id):
+                failed_tests.append("Update Invoice")
+            
+            # Mark invoice as paid
+            if not tester.test_mark_invoice_paid(invoice_id):
+                failed_tests.append("Mark Invoice Paid")
+        
+        # Test AR aging
+        if not tester.test_get_ar_aging():
+            failed_tests.append("Get AR Aging")
+        
+    except Exception as e:
+        print(f"❌ Invoices testing - Exception: {str(e)}")
+        failed_tests.append("Invoices CRUD")
+
+    # Test cleanup - delete created resources
+    print(f"\n{'='*60}")
+    print("🧹 CLEANUP - DELETING TEST DATA")
+    print(f"{'='*60}")
+    
+    try:
+        # Delete test invoice
+        if invoice_id:
+            if not tester.test_delete_invoice(invoice_id):
+                failed_tests.append("Delete Invoice")
+        
+        # Delete test client
+        if client_id:
+            if not tester.test_delete_client(client_id):
+                failed_tests.append("Delete Client")
+                
+    except Exception as e:
+        print(f"❌ Cleanup - Exception: {str(e)}")
+
+    # Test unauthorized access
+    try:
+        if not tester.test_unauthorized_access():
+            failed_tests.append("Unauthorized Access")
+    except Exception as e:
+        print(f"❌ Unauthorized Access - Exception: {str(e)}")
+        failed_tests.append("Unauthorized Access")
 
     # Print final results
     print("\n" + "=" * 60)
