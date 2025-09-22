@@ -190,10 +190,28 @@ const ClientsPage = ({ user }) => {
   };
 
   const handleSendReminder = (client) => {
-    // Simulate sending reminder
-    toast({
-      title: "Reminder Sent",
-      description: `Payment reminder sent to ${client.client_name || client.name}`,
+    // Copy email template to clipboard
+    const emailTemplate = `Subject: Payment Reminder - Outstanding Invoice
+
+Dear ${client.client_name || client.name},
+
+We hope this message finds you well. We wanted to reach out regarding outstanding invoices totaling ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(client.outstanding_ar || 0)}.
+
+Please review your account and process payment at your earliest convenience.
+
+Best regards,
+Your Account Team`;
+
+    navigator.clipboard.writeText(emailTemplate).then(() => {
+      toast({
+        title: "Email Template Copied",
+        description: `Payment reminder email template copied to clipboard for ${client.client_name || client.name}`,
+      });
+    }).catch(() => {
+      toast({
+        title: "Email Template Ready",
+        description: `Payment reminder template prepared for ${client.client_name || client.name}`,
+      });
     });
   };
 
