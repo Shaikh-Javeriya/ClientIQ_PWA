@@ -171,24 +171,40 @@ Your Account Team`;
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Link to="/clients">
-            <Button variant="outline" size="sm" className="flex items-center space-x-2">
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to Clients</span>
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">{client.name}</h1>
-            <p className="text-gray-600">Client Overview & Project Management</p>
+      {!embedded && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Link to="/clients">
+              <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                <ArrowLeft className="w-4 h-4" />
+                <span>Back to Clients</span>
+              </Button>
+            </Link>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">{client.name}</h1>
+              <p className="text-gray-600">Client Overview & Project Management</p>
+            </div>
           </div>
+          <Button onClick={handleCreateProject} className="btn-primary">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Project
+          </Button>
         </div>
-        <Button onClick={handleCreateProject} className="btn-primary">
-          <Plus className="w-4 h-4 mr-2" />
-          Add Project
-        </Button>
-      </div>
+      )}
+
+      {/* Embedded Header */}
+      {embedded && (
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">{client.name} - Detailed View</h2>
+            <p className="text-gray-600">Project Management & Invoice Tracking</p>
+          </div>
+          <Button onClick={handleCreateProject} className="btn-primary">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Project
+          </Button>
+        </div>
+      )}
 
       {/* Client Profile Card */}
       <ClientProfileCard client={client} summary={summary} />
