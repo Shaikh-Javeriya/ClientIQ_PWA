@@ -63,7 +63,7 @@ const LoginForm = ({ onLogin }) => {
             <LogIn className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Client Profitability
+            ClientIQ
           </h1>
           <p className="text-gray-600">
             Track your most profitable clients and manage accounts receivable
