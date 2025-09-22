@@ -157,9 +157,32 @@ const InvoicesPage = ({ user }) => {
   };
 
   const handleSendReminder = (invoice) => {
-    toast({
-      title: "Reminder Sent",
-      description: `Payment reminder sent for invoice ${invoice.id}`,
+    // Copy email template to clipboard
+    const emailTemplate = `Subject: Payment Reminder - Invoice ${invoice.id?.slice(-8) || 'Pending'}
+
+Dear ${invoice.client_name},
+
+We hope this message finds you well. We wanted to reach out regarding the outstanding invoice details below:
+
+Invoice Amount: ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(invoice.amount || 0)}
+Due Date: ${new Date(invoice.due_date).toLocaleDateString()}
+Days Overdue: ${invoice.days_overdue || 0} days
+
+Please review and process payment at your earliest convenience.
+
+Best regards,
+Your Account Team`;
+
+    navigator.clipboard.writeText(emailTemplate).then(() => {
+      toast({
+        title: "Email Template Copied",
+        description: `Payment reminder email template copied to clipboard for invoice ${invoice.id?.slice(-8) || 'N/A'}`,
+      });
+    }).catch(() => {
+      toast({
+        title: "Email Template Ready",
+        description: `Payment reminder template prepared for invoice ${invoice.id?.slice(-8) || 'N/A'}`,
+      });
     });
   };
 
