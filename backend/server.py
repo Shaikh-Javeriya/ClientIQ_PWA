@@ -385,42 +385,101 @@ async def delete_client(client_id: str, current_user: dict = Depends(get_current
         raise HTTPException(status_code=500, detail="Failed to delete client")
 
 # CRUD endpoints for invoices
-@api_router.get("/invoices", response_model=List[Invoice])
+@api_router.get("/invoices")
 async def get_invoices(current_user: dict = Depends(get_current_user)):
-    invoices = await db.invoices.find().to_list(length=None)
-    parsed_invoices = []
-    for invoice in invoices:
-        parsed_invoice = parse_from_mongo(invoice)
-        parsed_invoices.append(Invoice(**parsed_invoice))
-    return parsed_invoices
+    try:
+        invoices = await db.invoices.find().to_list(length=None)
+        parsed_invoices = []
+        for invoice in invoices:
+            if '_id' in invoice:
+                del invoice['_id']
+            parsed_invoice = parse_from_mongo(invoice)
+            parsed_invoices.append(parsed_invoice)
+        return parsed_invoices
+    except Exception as e:
+        print(f"Error getting invoices: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch invoices")
 
-@api_router.post("/invoices", response_model=Invoice)
-async def create_invoice(invoice_data: Invoice, current_user: dict = Depends(get_current_user)):
-    invoice_dict = prepare_for_mongo(invoice_data.dict())
-    await db.invoices.insert_one(invoice_dict)
-    return invoice_data
+@api_router.post("/invoices")
+async def create_invoice(invoice_data: dict, current_user: dict = Depends(get_current_user)):
+    try:
+        # Create a new invoice with UUID
+        invoice = {
+            "id": str(uuid.uuid4()),
+            "client_id": invoice_data.get("client_id", ""),
+            "project_id": invoice_data.get("project_id"),
+            "amount": float(invoice_data.get("amount", 0)),
+            "hours_billed": float(invoice_data.get("hours_billed", 0)),
+            "invoice_date": invoice_data.get("invoice_date"),
+            "due_date": invoice_data.get("due_date"),
+            "paid_date": invoice_data.get("paid_date"),
+            "status": invoice_data.get("status", "unpaid"),
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        invoice_dict = prepare_for_mongo(invoice)
+        await db.invoices.insert_one(invoice_dict)
+        return invoice
+    except Exception as e:
+        print(f"Error creating invoice: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create invoice")
 
-@api_router.put("/invoices/{invoice_id}", response_model=Invoice)
-async def update_invoice(invoice_id: str, invoice_data: Invoice, current_user: dict = Depends(get_current_user)):
-    invoice_dict = prepare_for_mongo(invoice_data.dict())
-    await db.invoices.update_one({"id": invoice_id}, {"$set": invoice_dict})
-    return invoice_data
+@api_router.put("/invoices/{invoice_id}")
+async def update_invoice(invoice_id: str, invoice_data: dict, current_user: dict = Depends(get_current_user)):
+    try:
+        update_data = {
+            "client_id": invoice_data.get("client_id", ""),
+            "project_id": invoice_data.get("project_id"),
+            "amount": float(invoice_data.get("amount", 0)),
+            "hours_billed": float(invoice_data.get("hours_billed", 0)),
+            "invoice_date": invoice_data.get("invoice_date"),
+            "due_date": invoice_data.get("due_date"),
+            "paid_date": invoice_data.get("paid_date"),
+            "status": invoice_data.get("status", "unpaid")
+        }
+        
+        update_dict = prepare_for_mongo(update_data)
+        result = await db.invoices.update_one({"id": invoice_id}, {"$set": update_dict})
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Invoice not found")
+            
+        # Return updated invoice
+        updated_invoice = await db.invoices.find_one({"id": invoice_id})
+        if '_id' in updated_invoice:
+            del updated_invoice['_id']
+        return parse_from_mongo(updated_invoice)
+    except Exception as e:
+        print(f"Error updating invoice: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update invoice")
 
 @api_router.delete("/invoices/{invoice_id}")
 async def delete_invoice(invoice_id: str, current_user: dict = Depends(get_current_user)):
-    await db.invoices.delete_one({"id": invoice_id})
-    return {"message": "Invoice deleted successfully"}
+    try:
+        result = await db.invoices.delete_one({"id": invoice_id})
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Invoice not found")
+        return {"message": "Invoice deleted successfully"}
+    except Exception as e:
+        print(f"Error deleting invoice: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete invoice")
 
 @api_router.put("/invoices/{invoice_id}/mark-paid")
 async def mark_invoice_paid(invoice_id: str, current_user: dict = Depends(get_current_user)):
-    await db.invoices.update_one(
-        {"id": invoice_id}, 
-        {"$set": {
-            "status": "paid",
-            "paid_date": datetime.now(timezone.utc).isoformat()
-        }}
-    )
-    return {"message": "Invoice marked as paid"}
+    try:
+        result = await db.invoices.update_one(
+            {"id": invoice_id}, 
+            {"$set": {
+                "status": "paid",
+                "paid_date": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Invoice not found")
+        return {"message": "Invoice marked as paid"}
+    except Exception as e:
+        print(f"Error marking invoice as paid: {e}")
+        raise HTTPException(status_code=500, detail="Failed to mark invoice as paid")
 
 # AR Aging endpoint
 @api_router.get("/invoices/ar-aging")
