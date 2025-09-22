@@ -527,6 +527,128 @@ async def get_ar_aging(current_user: dict = Depends(get_current_user)):
         print(f"Error getting AR aging: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch AR aging data")
 
+# CRUD endpoints for projects
+@api_router.get("/projects")
+async def get_projects(current_user: dict = Depends(get_current_user)):
+    try:
+        projects = await db.projects.find().to_list(length=None)
+        parsed_projects = []
+        for project in projects:
+            if '_id' in project:
+                del project['_id']
+            parsed_project = parse_from_mongo(project)
+            parsed_projects.append(parsed_project)
+        return parsed_projects
+    except Exception as e:
+        print(f"Error getting projects: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch projects")
+
+@api_router.post("/projects")
+async def create_project(project_data: dict, current_user: dict = Depends(get_current_user)):
+    try:
+        project = {
+            "id": str(uuid.uuid4()),
+            "client_id": project_data.get("client_id", ""),
+            "name": project_data.get("name", ""),
+            "description": project_data.get("description", ""),
+            "hourly_rate": float(project_data.get("hourly_rate", 0)),
+            "hours_worked": float(project_data.get("hours_worked", 0)),
+            "status": project_data.get("status", "active"),
+            "start_date": project_data.get("start_date"),
+            "end_date": project_data.get("end_date"),
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        project_dict = prepare_for_mongo(project.copy())
+        await db.projects.insert_one(project_dict)
+        return project
+    except Exception as e:
+        print(f"Error creating project: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create project")
+
+@api_router.put("/projects/{project_id}")
+async def update_project(project_id: str, project_data: dict, current_user: dict = Depends(get_current_user)):
+    try:
+        update_data = {
+            "client_id": project_data.get("client_id", ""),
+            "name": project_data.get("name", ""),
+            "description": project_data.get("description", ""),
+            "hourly_rate": float(project_data.get("hourly_rate", 0)),
+            "hours_worked": float(project_data.get("hours_worked", 0)),
+            "status": project_data.get("status", "active"),
+            "start_date": project_data.get("start_date"),
+            "end_date": project_data.get("end_date")
+        }
+        
+        update_dict = prepare_for_mongo(update_data)
+        result = await db.projects.update_one({"id": project_id}, {"$set": update_dict})
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Project not found")
+            
+        updated_project = await db.projects.find_one({"id": project_id})
+        if '_id' in updated_project:
+            del updated_project['_id']
+        return parse_from_mongo(updated_project)
+    except Exception as e:
+        print(f"Error updating project: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update project")
+
+@api_router.delete("/projects/{project_id}")
+async def delete_project(project_id: str, current_user: dict = Depends(get_current_user)):
+    try:
+        result = await db.projects.delete_one({"id": project_id})
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Project not found")
+        return {"message": "Project deleted successfully"}
+    except Exception as e:
+        print(f"Error deleting project: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete project")
+
+@api_router.get("/clients/{client_id}/details")
+async def get_client_details(client_id: str, current_user: dict = Depends(get_current_user)):
+    try:
+        # Get client info
+        client = await db.clients.find_one({"id": client_id})
+        if not client:
+            raise HTTPException(status_code=404, detail="Client not found")
+        
+        if '_id' in client:
+            del client['_id']
+        
+        # Get client projects
+        projects = await db.projects.find({"client_id": client_id}).to_list(length=None)
+        for project in projects:
+            if '_id' in project:
+                del project['_id']
+        
+        # Get client invoices
+        invoices = await db.invoices.find({"client_id": client_id}).to_list(length=None)
+        for invoice in invoices:
+            if '_id' in invoice:
+                del invoice['_id']
+        
+        # Calculate totals
+        total_revenue = sum(inv.get("amount", 0) for inv in invoices if inv.get("status") == "paid")
+        total_hours = sum(proj.get("hours_worked", 0) for proj in projects)
+        outstanding_ar = sum(inv.get("amount", 0) for inv in invoices if inv.get("status") in ["unpaid", "overdue"])
+        
+        return {
+            "client": parse_from_mongo(client),
+            "projects": [parse_from_mongo(proj) for proj in projects],
+            "invoices": [parse_from_mongo(inv) for inv in invoices],
+            "summary": {
+                "total_revenue": total_revenue,
+                "total_hours": total_hours,
+                "outstanding_ar": outstanding_ar,
+                "profit": total_revenue * 0.75,  # Assuming 25% overhead
+                "margin_percent": (total_revenue * 0.75 / total_revenue * 100) if total_revenue > 0 else 0
+            }
+        }
+    except Exception as e:
+        print(f"Error getting client details: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch client details")
+
 # Dashboard endpoints
 @api_router.get("/dashboard/kpis", response_model=KPIResponse)
 async def get_kpis(current_user: dict = Depends(get_current_user)):
