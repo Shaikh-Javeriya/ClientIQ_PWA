@@ -33,15 +33,45 @@ const ClientRevenueChart = ({ data }) => {
               <path d="M22 9v6c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V9c0-1.1.9-2 2-2h16c1.1 0 2 .9 2 2zm-4 0v6h2V9h-2zm-2 0H8v6h8V9zm-10 0H4v6h2V9z"/>
             </svg>
           </div>
-          <p>No client data available</p>
+          <p>No data available</p>
         </div>
       </div>
     );
   }
 
-  const sortedData = [...data]
-    .sort((a, b) => b.revenue - a.revenue)
-    .slice(0, 10);
+  // Handle different data formats - if it's invoice data, transform it to monthly revenue
+  let chartData;
+  let sortedData;
+  
+  if (data[0] && data[0].invoice_date) {
+    // This is invoice data - group by month
+    const monthlyData = {};
+    data.forEach(invoice => {
+      if (invoice.status === 'paid' && invoice.paid_date) {
+        const date = new Date(invoice.paid_date);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        if (!monthlyData[monthKey]) {
+          monthlyData[monthKey] = { revenue: 0, profit: 0 };
+        }
+        monthlyData[monthKey].revenue += invoice.amount || 0;
+        monthlyData[monthKey].profit += (invoice.amount || 0) * 0.75;
+      }
+    });
+    
+    sortedData = Object.entries(monthlyData)
+      .map(([month, data]) => ({
+        client_name: month,
+        revenue: data.revenue,
+        hours_worked: data.profit / 100 // Scale for visibility
+      }))
+      .sort((a, b) => a.client_name.localeCompare(b.client_name))
+      .slice(-12); // Last 12 months
+  } else {
+    // This is client profitability data
+    sortedData = [...data]
+      .sort((a, b) => (b.revenue || 0) - (a.revenue || 0))
+      .slice(0, 10);
+  }
 
   const chartData = {
     labels: sortedData.map(client => {
