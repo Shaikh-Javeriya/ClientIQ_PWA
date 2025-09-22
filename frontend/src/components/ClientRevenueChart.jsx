@@ -90,7 +90,7 @@ const ClientRevenueChart = ({ data }) => {
       },
       {
         label: 'Hours Worked',
-        data: sortedData.map(client => client.hours_worked * 100), // Scale for visibility
+        data: sortedData.map(client => (client.hours_worked || 0) * 100), // Scale for visibility
         backgroundColor: colors.light,
         borderColor: colors.medium,
         borderWidth: 1,
