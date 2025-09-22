@@ -125,17 +125,13 @@ const ClientFormModal = ({ client, isOpen, onClose, onSave }) => {
 
               <div>
                 <Label htmlFor="region">Region *</Label>
-                <Select value={formData.region} onValueChange={(value) => handleChange('region', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select region" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="North America">North America</SelectItem>
-                    <SelectItem value="Europe">Europe</SelectItem>
-                    <SelectItem value="Asia Pacific">Asia Pacific</SelectItem>
-                    <SelectItem value="Latin America">Latin America</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Input
+                  id="region"
+                  value={formData.region}
+                  onChange={(e) => handleChange('region', e.target.value)}
+                  placeholder="e.g. North America, Europe, Asia Pacific"
+                  required
+                />
               </div>
             </div>
 
