@@ -181,7 +181,7 @@ class RevenueByMonth(BaseModel):
 # Add your routes to the router instead of directly to app
 @api_router.get("/")
 async def root():
-    return {"message": "Client Profitability Dashboard API is running"}
+    return {"message": "ClientIQ API is running"}
 
 # Authentication endpoints
 @api_router.post("/auth/register", response_model=Token)
