@@ -5,10 +5,10 @@ import {
   Users, 
   DollarSign, 
   Settings,
+  User,
   LogOut,
   RefreshCw
 } from 'lucide-react';
-import ThemeSelector from './ThemeSelector';
 import { Button } from './ui/button';
 
 const MainLayout = ({ user, onLogout, children }) => {
