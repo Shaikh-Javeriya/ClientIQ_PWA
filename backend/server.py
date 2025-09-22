@@ -484,31 +484,46 @@ async def mark_invoice_paid(invoice_id: str, current_user: dict = Depends(get_cu
 # AR Aging endpoint
 @api_router.get("/invoices/ar-aging")
 async def get_ar_aging(current_user: dict = Depends(get_current_user)):
-    unpaid_invoices = await db.invoices.find({"status": {"$in": ["unpaid", "overdue"]}}).to_list(length=None)
-    
-    aging_buckets = {
-        "0-30": 0,
-        "31-60": 0,
-        "61-90": 0,
-        "90+": 0
-    }
-    
-    current_date = datetime.now(timezone.utc)
-    
-    for invoice in unpaid_invoices:
-        due_date = datetime.fromisoformat(invoice["due_date"].replace('Z', '+00:00'))
-        days_overdue = (current_date - due_date).days
+    try:
+        unpaid_invoices = await db.invoices.find({"status": {"$in": ["unpaid", "overdue"]}}).to_list(length=None)
         
-        if days_overdue <= 30:
-            aging_buckets["0-30"] += invoice["amount"]
-        elif days_overdue <= 60:
-            aging_buckets["31-60"] += invoice["amount"]
-        elif days_overdue <= 90:
-            aging_buckets["61-90"] += invoice["amount"]
-        else:
-            aging_buckets["90+"] += invoice["amount"]
-    
-    return aging_buckets
+        aging_buckets = {
+            "0-30": 0,
+            "31-60": 0,
+            "61-90": 0,
+            "90+": 0
+        }
+        
+        current_date = datetime.now(timezone.utc)
+        
+        for invoice in unpaid_invoices:
+            try:
+                due_date_str = invoice.get("due_date", "")
+                if due_date_str:
+                    if isinstance(due_date_str, str):
+                        due_date = datetime.fromisoformat(due_date_str.replace('Z', '+00:00'))
+                    else:
+                        due_date = due_date_str
+                    
+                    days_overdue = (current_date - due_date).days
+                    amount = invoice.get("amount", 0)
+                    
+                    if days_overdue <= 30:
+                        aging_buckets["0-30"] += amount
+                    elif days_overdue <= 60:
+                        aging_buckets["31-60"] += amount
+                    elif days_overdue <= 90:
+                        aging_buckets["61-90"] += amount
+                    else:
+                        aging_buckets["90+"] += amount
+            except Exception as e:
+                print(f"Error processing invoice {invoice.get('id', 'unknown')}: {e}")
+                continue
+        
+        return aging_buckets
+    except Exception as e:
+        print(f"Error getting AR aging: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch AR aging data")
 
 # Dashboard endpoints
 @api_router.get("/dashboard/kpis", response_model=KPIResponse)
