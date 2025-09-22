@@ -6,6 +6,9 @@ import './App.css';
 // Import components
 import LoginForm from './components/LoginForm';
 import Dashboard from './components/Dashboard';
+import ClientsPage from './components/ClientsPage';
+import InvoicesPage from './components/InvoicesPage';
+import MainLayout from './components/MainLayout';
 import ThemeProvider from './components/ThemeProvider';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
