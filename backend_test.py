@@ -418,6 +418,151 @@ class ClientProfitabilityAPITester:
                     print(f"   {bucket} days: ${amount:,.2f}")
         return success
 
+    # NEW PROJECT ENDPOINTS TESTING
+    def test_get_projects(self):
+        """Test get all projects endpoint"""
+        success, response = self.run_test(
+            "Get All Projects",
+            "GET",
+            "projects",
+            200
+        )
+        if success and isinstance(response, list):
+            print(f"   Found {len(response)} projects")
+            if response:
+                project = response[0]
+                expected_fields = ['id', 'client_id', 'name', 'hourly_rate', 'hours_worked']
+                missing_fields = [field for field in expected_fields if field not in project]
+                if missing_fields:
+                    print(f"   ⚠️  Missing project fields: {missing_fields}")
+                else:
+                    print(f"   ✅ All project fields present")
+                    print(f"   Sample project: {project.get('name', 'Unknown')} - {project.get('hours_worked', 0)} hours")
+        return success, response
+
+    def test_create_project(self, client_id):
+        """Test create new project endpoint"""
+        if not client_id:
+            print("   ⚠️  No client ID provided for project creation")
+            return False, None
+            
+        test_project = {
+            "client_id": client_id,
+            "name": "Test Project Alpha",
+            "description": "A comprehensive test project for API validation",
+            "hourly_rate": 125.0,
+            "hours_worked": 40.0,
+            "status": "active",
+            "start_date": datetime.now().isoformat(),
+            "end_date": (datetime.now() + timedelta(days=90)).isoformat()
+        }
+        
+        success, response = self.run_test(
+            "Create New Project",
+            "POST",
+            "projects",
+            200,
+            data=test_project
+        )
+        
+        if success:
+            print(f"   ✅ Created project: {response.get('name', 'Unknown')}")
+            return success, response.get('id')
+        return success, None
+
+    def test_update_project(self, project_id):
+        """Test update project endpoint"""
+        if not project_id:
+            print("   ⚠️  No project ID provided for update test")
+            return False
+            
+        updated_project = {
+            "client_id": "test-client-id",
+            "name": "Updated Test Project Alpha",
+            "description": "Updated comprehensive test project",
+            "hourly_rate": 150.0,
+            "hours_worked": 60.0,
+            "status": "completed",
+            "start_date": datetime.now().isoformat(),
+            "end_date": (datetime.now() + timedelta(days=120)).isoformat()
+        }
+        
+        success, response = self.run_test(
+            "Update Project",
+            "PUT",
+            f"projects/{project_id}",
+            200,
+            data=updated_project
+        )
+        
+        if success:
+            print(f"   ✅ Updated project: {response.get('name', 'Unknown')}")
+        return success
+
+    def test_delete_project(self, project_id):
+        """Test delete project endpoint"""
+        if not project_id:
+            print("   ⚠️  No project ID provided for delete test")
+            return False
+            
+        success, response = self.run_test(
+            "Delete Project",
+            "DELETE",
+            f"projects/{project_id}",
+            200
+        )
+        
+        if success:
+            print(f"   ✅ Deleted project successfully")
+        return success
+
+    def test_get_client_details(self, client_id):
+        """Test client details endpoint for drillthrough page"""
+        if not client_id:
+            print("   ⚠️  No client ID provided for client details test")
+            return False
+            
+        success, response = self.run_test(
+            "Get Client Details",
+            "GET",
+            f"clients/{client_id}/details",
+            200
+        )
+        
+        if success and isinstance(response, dict):
+            expected_sections = ['client', 'projects', 'invoices', 'summary']
+            missing_sections = [section for section in expected_sections if section not in response]
+            if missing_sections:
+                print(f"   ⚠️  Missing client details sections: {missing_sections}")
+            else:
+                print(f"   ✅ All client details sections present")
+                
+                # Check client info
+                client_info = response.get('client', {})
+                print(f"   Client: {client_info.get('name', 'Unknown')}")
+                
+                # Check projects
+                projects = response.get('projects', [])
+                print(f"   Projects: {len(projects)} found")
+                
+                # Check invoices
+                invoices = response.get('invoices', [])
+                print(f"   Invoices: {len(invoices)} found")
+                
+                # Check summary
+                summary = response.get('summary', {})
+                expected_summary_fields = ['total_revenue', 'total_hours', 'outstanding_ar', 'profit', 'margin_percent']
+                missing_summary_fields = [field for field in expected_summary_fields if field not in summary]
+                if missing_summary_fields:
+                    print(f"   ⚠️  Missing summary fields: {missing_summary_fields}")
+                else:
+                    print(f"   ✅ All summary fields present")
+                    print(f"   Revenue: ${summary.get('total_revenue', 0):,.2f}")
+                    print(f"   Profit: ${summary.get('profit', 0):,.2f}")
+                    print(f"   Margin: {summary.get('margin_percent', 0):.1f}%")
+        
+        return success
+
 def main():
     print("🚀 Starting Client Profitability Dashboard API Tests")
     print("=" * 60)
