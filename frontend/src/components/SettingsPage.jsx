@@ -86,20 +86,7 @@ const SettingsPage = ({ user }) => {
     }
   };
 
-  const applyDarkMode = (isDark) => {
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-      document.body.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.body.classList.remove('dark');
-    }
-  };
-
-  // Apply dark mode on settings change
-  useEffect(() => {
-    applyDarkMode(settings.darkMode);
-  }, [settings.darkMode]);
+  // Dark mode functionality removed
 
   const currencies = [
     { code: 'USD', name: 'US Dollar', symbol: '$' },
