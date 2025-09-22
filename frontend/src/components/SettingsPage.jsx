@@ -69,9 +69,6 @@ const SettingsPage = ({ user }) => {
       localStorage.setItem('dashboard_settings', JSON.stringify(settings));
       setHasChanges(false);
       
-      // Apply dark mode immediately
-      applyDarkMode(settings.darkMode);
-      
       toast({
         title: "Settings Saved",
         description: "Your preferences have been saved successfully",
