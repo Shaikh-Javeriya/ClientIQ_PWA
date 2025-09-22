@@ -304,30 +304,85 @@ async def generate_sample_data(current_user: dict = Depends(get_current_user)):
     return {"message": "Sample data generated successfully"}
 
 # CRUD endpoints for clients
-@api_router.get("/clients", response_model=List[Client])
+@api_router.get("/clients")
 async def get_clients(current_user: dict = Depends(get_current_user)):
-    clients = await db.clients.find().to_list(length=None)
-    return [Client(**client) for client in clients]
+    try:
+        clients = await db.clients.find().to_list(length=None)
+        parsed_clients = []
+        for client in clients:
+            # Remove MongoDB _id and parse dates
+            if '_id' in client:
+                del client['_id']
+            parsed_client = parse_from_mongo(client)
+            parsed_clients.append(parsed_client)
+        return parsed_clients
+    except Exception as e:
+        print(f"Error getting clients: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch clients")
 
-@api_router.post("/clients", response_model=Client)
-async def create_client(client_data: Client, current_user: dict = Depends(get_current_user)):
-    client_dict = prepare_for_mongo(client_data.dict())
-    await db.clients.insert_one(client_dict)
-    return client_data
+@api_router.post("/clients")
+async def create_client(client_data: dict, current_user: dict = Depends(get_current_user)):
+    try:
+        # Create a new client with UUID
+        client = {
+            "id": str(uuid.uuid4()),
+            "name": client_data.get("name", ""),
+            "tier": client_data.get("tier", ""),
+            "region": client_data.get("region", ""),
+            "contact_email": client_data.get("contact_email", ""),
+            "contact_phone": client_data.get("contact_phone", ""),
+            "hourly_rate": float(client_data.get("hourly_rate", 0)),
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        client_dict = prepare_for_mongo(client)
+        await db.clients.insert_one(client_dict)
+        return client
+    except Exception as e:
+        print(f"Error creating client: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create client")
 
-@api_router.put("/clients/{client_id}", response_model=Client)
-async def update_client(client_id: str, client_data: Client, current_user: dict = Depends(get_current_user)):
-    client_dict = prepare_for_mongo(client_data.dict())
-    await db.clients.update_one({"id": client_id}, {"$set": client_dict})
-    return client_data
+@api_router.put("/clients/{client_id}")
+async def update_client(client_id: str, client_data: dict, current_user: dict = Depends(get_current_user)):
+    try:
+        update_data = {
+            "name": client_data.get("name", ""),
+            "tier": client_data.get("tier", ""),
+            "region": client_data.get("region", ""),
+            "contact_email": client_data.get("contact_email", ""),
+            "contact_phone": client_data.get("contact_phone", ""),
+            "hourly_rate": float(client_data.get("hourly_rate", 0))
+        }
+        
+        update_dict = prepare_for_mongo(update_data)
+        result = await db.clients.update_one({"id": client_id}, {"$set": update_dict})
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Client not found")
+            
+        # Return updated client
+        updated_client = await db.clients.find_one({"id": client_id})
+        if '_id' in updated_client:
+            del updated_client['_id']
+        return parse_from_mongo(updated_client)
+    except Exception as e:
+        print(f"Error updating client: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update client")
 
 @api_router.delete("/clients/{client_id}")
 async def delete_client(client_id: str, current_user: dict = Depends(get_current_user)):
-    # Delete client and associated projects and invoices
-    await db.clients.delete_one({"id": client_id})
-    await db.projects.delete_many({"client_id": client_id})
-    await db.invoices.delete_many({"client_id": client_id})
-    return {"message": "Client deleted successfully"}
+    try:
+        # Delete client and associated projects and invoices
+        result = await db.clients.delete_one({"id": client_id})
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Client not found")
+            
+        await db.projects.delete_many({"client_id": client_id})
+        await db.invoices.delete_many({"client_id": client_id})
+        return {"message": "Client deleted successfully"}
+    except Exception as e:
+        print(f"Error deleting client: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete client")
 
 # CRUD endpoints for invoices
 @api_router.get("/invoices", response_model=List[Invoice])
