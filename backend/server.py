@@ -33,7 +33,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
 # Create the main app without a prefix
-app = FastAPI(title="Client Profitability Dashboard API")
+app = FastAPI(title="ClientIQ API")
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
