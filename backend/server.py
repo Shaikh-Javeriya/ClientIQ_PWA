@@ -30,7 +30,8 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 1440  # 24 hours
 
 # Password hashing
 #pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-pwd_context = CryptContext(schemes=["bcrypt_sha256", "bcrypt"], deprecated="auto")
+#pwd_context = CryptContext(schemes=["bcrypt_sha256", "bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 security = HTTPBearer()
 
 # Create the main app without a prefix
@@ -66,7 +67,7 @@ def parse_from_mongo(item):
 
 #def get_password_hash(password):
  #   return pwd_context.hash(password)
-
+"""
 def get_password_hash(password: str) -> str:
     # Ensure text, never bytes; do not log passwords
     if isinstance(password, bytes):
@@ -93,7 +94,12 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
                 pass
         # Re-raise original error for visibility if not handled
         raise
+"""
+def get_password_hash(password: str) -> str:
+    return pwd_context.hash(password)
 
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
