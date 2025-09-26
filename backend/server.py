@@ -31,7 +31,8 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 1440  # 24 hours
 # Password hashing
 #pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 #pwd_context = CryptContext(schemes=["bcrypt_sha256", "bcrypt"], deprecated="auto")
-pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+#pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+pwd_context = CryptContext(schemes=["argon2", "bcrypt_sha256", "bcrypt"],deprecated="auto")
 security = HTTPBearer()
 
 # Create the main app without a prefix
