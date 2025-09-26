@@ -29,7 +29,8 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440  # 24 hours
 
 # Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+#pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt_sha256", "bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
 # Create the main app without a prefix
@@ -60,11 +61,39 @@ def parse_from_mongo(item):
                     pass
     return item
 
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+#def verify_password(plain_password, hashed_password):
+ #   return pwd_context.verify(plain_password, hashed_password)
 
-def get_password_hash(password):
+#def get_password_hash(password):
+ #   return pwd_context.hash(password)
+
+def get_password_hash(password: str) -> str:
+    # Ensure text, never bytes; do not log passwords
+    if isinstance(password, bytes):
+        password = password.decode("utf-8", errors="ignore")
+    # Use pwd_context.hash — will use bcrypt_sha256 for new hashes (safe for long pw)
     return pwd_context.hash(password)
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    # Normalize types
+    if isinstance(plain_password, bytes):
+        plain_password = plain_password.decode("utf-8", errors="ignore")
+    if not hashed_password:
+        return False
+    try:
+        return pwd_context.verify(plain_password, hashed_password)
+    except ValueError as e:
+        # bcrypt can raise ValueError when the password is too long / unexpected type.
+        # As a last-resort fallback, try truncated password (bcrypt limit).
+        msg = str(e).lower()
+        if "72" in msg or "too long" in msg or "longer than" in msg:
+            try:
+                return pwd_context.verify(plain_password[:72], hashed_password)
+            except Exception:
+                pass
+        # Re-raise original error for visibility if not handled
+        raise
+
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
