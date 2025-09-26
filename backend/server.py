@@ -229,9 +229,9 @@ async def login(user_data: UserLogin):
 @api_router.post("/data/generate-sample")
 async def generate_sample_data(current_user: dict = Depends(get_current_user)):
     # Clear existing data
-    await db.clients.delete_many({})
-    await db.projects.delete_many({})
-    await db.invoices.delete_many({})
+    await db.clients.delete_many({"user_id": current_user["id"]})
+    await db.projects.delete_many({"user_id": current_user["id"]})
+    await db.invoices.delete_many({"user_id": current_user["id"]})
     
     # Generate clients
     client_names = [
@@ -252,8 +252,11 @@ async def generate_sample_data(current_user: dict = Depends(get_current_user)):
             contact_email=f"contact@{name.lower().replace(' ', '')}.com",
             hourly_rate=random.uniform(75, 250)
         )
+        client_dict = client.dict()
+        client_dict["user_id"] = current_user["id"]   # attach user_id
+
         clients.append(client)
-        await db.clients.insert_one(prepare_for_mongo(client.dict()))
+        await db.clients.insert_one(prepare_for_mongo(client_dict))
     
     # Generate projects and invoices
     for client in clients:
@@ -266,7 +269,10 @@ async def generate_sample_data(current_user: dict = Depends(get_current_user)):
                 hourly_rate=client.hourly_rate,
                 hours_worked=random.uniform(20, 200)
             )
-            await db.projects.insert_one(prepare_for_mongo(project.dict()))
+            project_dict = project.dict()
+            project_dict["user_id"] = current_user["id"]
+
+            await db.projects.insert_one(prepare_for_mongo(project_dict))
             
             # Generate invoices for this project
             num_invoices = random.randint(2, 6)
@@ -299,15 +305,19 @@ async def generate_sample_data(current_user: dict = Depends(get_current_user)):
                     paid_date=paid_date,
                     status=status
                 )
-                await db.invoices.insert_one(prepare_for_mongo(invoice.dict()))
-    
+                invoice_dict = invoice.dict()
+                invoice_dict["user_id"] = current_user["id"]
+
+                await db.invoices.insert_one(prepare_for_mongo(invoice_dict))
+
     return {"message": "Sample data generated successfully"}
 
 # CRUD endpoints for clients
 @api_router.get("/clients")
 async def get_clients(current_user: dict = Depends(get_current_user)):
     try:
-        clients = await db.clients.find().to_list(length=None)
+        #clients = await db.clients.find().to_list(length=None)
+        clients = await db.clients.find({"user_id": current_user["id"]}).to_list(length=None)
         parsed_clients = []
         for client in clients:
             # Remove MongoDB _id and parse dates
@@ -326,6 +336,7 @@ async def create_client(client_data: dict, current_user: dict = Depends(get_curr
         # Create a new client with UUID
         client = {
             "id": str(uuid.uuid4()),
+            "user_id": current_user["id"],
             "name": client_data.get("name", ""),
             "tier": client_data.get("tier", ""),
             "region": client_data.get("region", ""),
@@ -356,13 +367,13 @@ async def update_client(client_id: str, client_data: dict, current_user: dict = 
         }
         
         update_dict = prepare_for_mongo(update_data)
-        result = await db.clients.update_one({"id": client_id}, {"$set": update_dict})
+        result = await db.clients.update_one({"id": client_id, "user_id": current_user["id"]}, {"$set": update_dict})
         
         if result.matched_count == 0:
             raise HTTPException(status_code=404, detail="Client not found")
             
         # Return updated client
-        updated_client = await db.clients.find_one({"id": client_id})
+        updated_client = await db.clients.find_one({"id": client_id, "user_id": current_user["id"]})
         if '_id' in updated_client:
             del updated_client['_id']
         return parse_from_mongo(updated_client)
@@ -374,12 +385,12 @@ async def update_client(client_id: str, client_data: dict, current_user: dict = 
 async def delete_client(client_id: str, current_user: dict = Depends(get_current_user)):
     try:
         # Delete client and associated projects and invoices
-        result = await db.clients.delete_one({"id": client_id})
+        result = await db.clients.delete_one({"id": client_id, "user_id": current_user["id"]})
         if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="Client not found")
             
-        await db.projects.delete_many({"client_id": client_id})
-        await db.invoices.delete_many({"client_id": client_id})
+        await db.projects.delete_many({"client_id": client_id, "user_id": current_user["id"]})
+        await db.invoices.delete_many({"client_id": client_id, "user_id": current_user["id"]})
         return {"message": "Client deleted successfully"}
     except Exception as e:
         print(f"Error deleting client: {e}")
@@ -389,7 +400,8 @@ async def delete_client(client_id: str, current_user: dict = Depends(get_current
 @api_router.get("/invoices")
 async def get_invoices(current_user: dict = Depends(get_current_user)):
     try:
-        invoices = await db.invoices.find().to_list(length=None)
+        #invoices = await db.invoices.find().to_list(length=None)
+        invoices = await db.invoices.find({"user_id": current_user["id"]}).to_list(length=None)
         parsed_invoices = []
         for invoice in invoices:
             if '_id' in invoice:
@@ -407,6 +419,7 @@ async def create_invoice(invoice_data: dict, current_user: dict = Depends(get_cu
         # Create a new invoice with UUID
         invoice = {
             "id": str(uuid.uuid4()),
+            "user_id": current_user["id"],
             "client_id": invoice_data.get("client_id", ""),
             "project_id": invoice_data.get("project_id"),
             "amount": float(invoice_data.get("amount", 0)),
@@ -441,13 +454,13 @@ async def update_invoice(invoice_id: str, invoice_data: dict, current_user: dict
         }
         
         update_dict = prepare_for_mongo(update_data)
-        result = await db.invoices.update_one({"id": invoice_id}, {"$set": update_dict})
+        result = await db.invoices.update_one({"id": invoice_id, "user_id": current_user["id"]}, {"$set": update_dict})
         
         if result.matched_count == 0:
             raise HTTPException(status_code=404, detail="Invoice not found")
             
         # Return updated invoice
-        updated_invoice = await db.invoices.find_one({"id": invoice_id})
+        updated_invoice = await db.invoices.find_one({"id": invoice_id, "user_id": current_user["id"]})
         if '_id' in updated_invoice:
             del updated_invoice['_id']
         return parse_from_mongo(updated_invoice)
@@ -458,7 +471,7 @@ async def update_invoice(invoice_id: str, invoice_data: dict, current_user: dict
 @api_router.delete("/invoices/{invoice_id}")
 async def delete_invoice(invoice_id: str, current_user: dict = Depends(get_current_user)):
     try:
-        result = await db.invoices.delete_one({"id": invoice_id})
+        result = await db.invoices.delete_one({"id": invoice_id, "user_id": current_user["id"]})
         if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="Invoice not found")
         return {"message": "Invoice deleted successfully"}
@@ -470,7 +483,7 @@ async def delete_invoice(invoice_id: str, current_user: dict = Depends(get_curre
 async def mark_invoice_paid(invoice_id: str, current_user: dict = Depends(get_current_user)):
     try:
         result = await db.invoices.update_one(
-            {"id": invoice_id}, 
+            {"id": invoice_id, "user_id": current_user["id"]}, 
             {"$set": {
                 "status": "paid",
                 "paid_date": datetime.now(timezone.utc).isoformat()
@@ -487,7 +500,7 @@ async def mark_invoice_paid(invoice_id: str, current_user: dict = Depends(get_cu
 @api_router.get("/invoices/ar-aging")
 async def get_ar_aging(current_user: dict = Depends(get_current_user)):
     try:
-        unpaid_invoices = await db.invoices.find({"status": {"$in": ["unpaid", "overdue"]}}).to_list(length=None)
+        unpaid_invoices = await db.invoices.find({"status": {"$in": ["unpaid", "overdue"]},"user_id": current_user["id"]}).to_list(length=None)
         
         aging_buckets = {
             "0-30": 0,
@@ -531,7 +544,8 @@ async def get_ar_aging(current_user: dict = Depends(get_current_user)):
 @api_router.get("/projects")
 async def get_projects(current_user: dict = Depends(get_current_user)):
     try:
-        projects = await db.projects.find().to_list(length=None)
+        #projects = await db.projects.find().to_list(length=None)
+        projects = await db.projects.find({"user_id": current_user["id"]}).to_list(length=None)
         parsed_projects = []
         for project in projects:
             if '_id' in project:
@@ -548,6 +562,7 @@ async def create_project(project_data: dict, current_user: dict = Depends(get_cu
     try:
         project = {
             "id": str(uuid.uuid4()),
+            "user_id": current_user["id"],
             "client_id": project_data.get("client_id", ""),
             "name": project_data.get("name", ""),
             "description": project_data.get("description", ""),
@@ -581,7 +596,7 @@ async def update_project(project_id: str, project_data: dict, current_user: dict
         }
         
         update_dict = prepare_for_mongo(update_data)
-        result = await db.projects.update_one({"id": project_id}, {"$set": update_dict})
+        result = await db.projects.update_one({"id": project_id, "user_id": current_user["id"]}, {"$set": update_dict})
         
         if result.matched_count == 0:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -597,7 +612,7 @@ async def update_project(project_id: str, project_data: dict, current_user: dict
 @api_router.delete("/projects/{project_id}")
 async def delete_project(project_id: str, current_user: dict = Depends(get_current_user)):
     try:
-        result = await db.projects.delete_one({"id": project_id})
+        result = await db.projects.delete_one({"id": project_id, "user_id": current_user["id"]})
         if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="Project not found")
         return {"message": "Project deleted successfully"}
@@ -609,7 +624,7 @@ async def delete_project(project_id: str, current_user: dict = Depends(get_curre
 async def get_client_details(client_id: str, current_user: dict = Depends(get_current_user)):
     try:
         # Get client info
-        client = await db.clients.find_one({"id": client_id})
+        client = await db.clients.find_one({"id": client_id, "user_id": current_user["id"]})
         if not client:
             raise HTTPException(status_code=404, detail="Client not found")
         
@@ -617,13 +632,13 @@ async def get_client_details(client_id: str, current_user: dict = Depends(get_cu
             del client['_id']
         
         # Get client projects
-        projects = await db.projects.find({"client_id": client_id}).to_list(length=None)
+        projects = await db.projects.find({"client_id": client_id, "user_id": current_user["id"]}).to_list(length=None)
         for project in projects:
             if '_id' in project:
                 del project['_id']
         
         # Get client invoices
-        invoices = await db.invoices.find({"client_id": client_id}).to_list(length=None)
+        invoices = await db.invoices.find({"client_id": client_id, "user_id": current_user["id"]}).to_list(length=None)
         for invoice in invoices:
             if '_id' in invoice:
                 del invoice['_id']
@@ -653,7 +668,7 @@ async def get_client_details(client_id: str, current_user: dict = Depends(get_cu
 @api_router.get("/dashboard/kpis", response_model=KPIResponse)
 async def get_kpis(current_user: dict = Depends(get_current_user)):
     # Get all invoices
-    invoices = await db.invoices.find().to_list(length=None)
+    invoices = await db.invoices.find({"user_id": current_user["id"]}).to_list(length=None)
     
     total_revenue = sum(inv["amount"] for inv in invoices if inv["status"] == "paid")
     outstanding_ar = sum(inv["amount"] for inv in invoices if inv["status"] in ["unpaid", "overdue"])
@@ -677,12 +692,12 @@ async def get_kpis(current_user: dict = Depends(get_current_user)):
 
 @api_router.get("/dashboard/client-profitability", response_model=List[ClientProfitability])
 async def get_client_profitability(current_user: dict = Depends(get_current_user)):
-    clients = await db.clients.find().to_list(length=None)
+    clients = await db.clients.find({"user_id": current_user["id"]}).to_list(length=None)
     result = []
     
     for client in clients:
-        invoices = await db.invoices.find({"client_id": client["id"]}).to_list(length=None)
-        projects = await db.projects.find({"client_id": client["id"]}).to_list(length=None)
+        invoices = await db.invoices.find({"client_id": client["id"], "user_id": current_user["id"]}).to_list(length=None)
+        projects = await db.projects.find({"client_id": client["id"], "user_id": current_user["id"]}).to_list(length=None)
         
         revenue = sum(inv["amount"] for inv in invoices if inv["status"] == "paid")
         hours_worked = sum(proj["hours_worked"] for proj in projects)
@@ -723,7 +738,8 @@ async def get_revenue_by_month(current_user: dict = Depends(get_current_user)):
     start_date = datetime.now(timezone.utc) - timedelta(days=365)
     invoices = await db.invoices.find({
         "status": "paid",
-        "paid_date": {"$gte": start_date.isoformat()}
+        "paid_date": {"$gte": start_date.isoformat()},
+        "user_id": current_user["id"]
     }).to_list(length=None)
     
     # Group by month
