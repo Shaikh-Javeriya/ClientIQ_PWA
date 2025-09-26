@@ -416,6 +416,16 @@ async def get_invoices(current_user: dict = Depends(get_current_user)):
 @api_router.post("/invoices")
 async def create_invoice(invoice_data: dict, current_user: dict = Depends(get_current_user)):
     try:
+        # 1. Validate that the client exists and belongs to the current user
+        client = await db.clients.find_one({
+            "id": invoice_data.get("client_id", ""),
+            "user_id": current_user["id"]})
+        if not client:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid client_id. Client does not exist or does not belong to this user."
+                )
+        
         # Create a new invoice with UUID
         invoice = {
             "id": str(uuid.uuid4()),
