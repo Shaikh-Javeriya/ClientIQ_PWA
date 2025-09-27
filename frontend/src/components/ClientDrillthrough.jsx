@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
-import { 
-  ArrowLeft, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  Check, 
+import {
+  ArrowLeft,
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
+  Check,
   Mail,
   DollarSign,
   Clock,
@@ -23,6 +23,7 @@ import ProjectProfitabilityChart from './ProjectProfitabilityChart';
 import ClientInvoicesList from './ClientInvoicesList';
 import ProjectFormModal from './ProjectFormModal';
 import { useToast } from './ui/use-toast';
+import { useCurrency } from "./components/CurrencyContext";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -35,6 +36,9 @@ const ClientDrillthrough = ({ clientId: propClientId, embedded = false }) => {
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const { toast } = useToast();
+  const { currency, locale } = useCurrency();
+  const formatCurrency = (value) =>
+    new Intl.NumberFormat(locale, { style: "currency", currency }).format(value);
 
   const fetchClientDetails = async () => {
     try {
@@ -125,7 +129,7 @@ Dear ${clientDetails?.client?.name || 'Client'},
 
 We hope this message finds you well. We wanted to reach out regarding the outstanding invoice details below:
 
-Invoice Amount: ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(invoice.amount || 0)}
+Invoice Amount: ${formatCurrency(invoice.amount || 0)}
 Due Date: ${new Date(invoice.due_date).toLocaleDateString()}
 Days Overdue: ${invoice.days_overdue || 0} days
 
@@ -269,20 +273,19 @@ Your Account Team`;
                       <td className="font-medium text-gray-900">{project.name}</td>
                       <td className="text-right">{(project.hours_worked || 0).toFixed(1)}h</td>
                       <td className="text-right">
-                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(project.hourly_rate || 0)}
+                        {formatCurrency(project.hourly_rate || 0)}
                       </td>
                       <td className="text-right font-semibold">
-                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(revenue)}
+                        {formatCurrency(revenue)}
                       </td>
                       <td className="text-right font-semibold text-green-600">
-                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(profit)}
+                        {formatCurrency(profit)}
                       </td>
                       <td>
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          project.status === 'active' ? 'bg-green-100 text-green-800' :
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${project.status === 'active' ? 'bg-green-100 text-green-800' :
                           project.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
+                            'bg-gray-100 text-gray-800'
+                          }`}>
                           {project.status || 'active'}
                         </span>
                       </td>
@@ -324,7 +327,7 @@ Your Account Team`;
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ClientInvoicesList 
+          <ClientInvoicesList
             invoices={invoices}
             projects={projects}
             onMarkPaid={handleMarkInvoicePaid}

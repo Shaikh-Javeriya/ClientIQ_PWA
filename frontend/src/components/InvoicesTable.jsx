@@ -2,15 +2,17 @@ import React from 'react';
 import { Eye, Check, Mail, Edit, Trash2, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from './ui/button';
+import CurrencyProvider from "./components/CurrencyContext";
 
 const InvoicesTable = ({ invoices, onEdit, onDelete, onMarkPaid, onSendReminder }) => {
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount || 0);
+  const { currency, locale } = useCurrency();
+  const formatCurrency = (value, options = {}) => {
+    new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: options.minFractionDigits ?? 0,
+      notation: options.notation || "standard", // default is normal numbers
+    }).format(value || 0)
   };
 
   const getStatusColor = (status, daysOverdue) => {
@@ -117,7 +119,7 @@ const InvoicesTable = ({ invoices, onEdit, onDelete, onMarkPaid, onSendReminder 
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
-                  
+
                   {invoice.status !== 'paid' && (
                     <Button
                       variant="ghost"
@@ -129,7 +131,7 @@ const InvoicesTable = ({ invoices, onEdit, onDelete, onMarkPaid, onSendReminder 
                       <Check className="w-4 h-4" />
                     </Button>
                   )}
-                  
+
                   {invoice.status === 'overdue' && (
                     <Button
                       variant="ghost"
@@ -141,7 +143,7 @@ const InvoicesTable = ({ invoices, onEdit, onDelete, onMarkPaid, onSendReminder 
                       <Mail className="w-4 h-4" />
                     </Button>
                   )}
-                  
+
                   <Button
                     variant="ghost"
                     size="sm"

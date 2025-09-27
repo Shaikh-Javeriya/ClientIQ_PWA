@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { useToast } from './ui/use-toast';
 import { format } from 'date-fns';
+import CurrencyProvider from "./components/CurrencyContext";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -22,6 +23,15 @@ const InvoiceFormModal = ({ invoice, clients, isOpen, onClose, onSave }) => {
   });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { currency, locale } = useCurrency();
+  const formatCurrency = (value, options = {}) => {
+    new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: options.minFractionDigits ?? 0,
+      notation: options.notation || "standard", // default is normal numbers
+    }).format(value || 0)
+  };
 
   useEffect(() => {
     if (invoice) {
@@ -37,7 +47,7 @@ const InvoiceFormModal = ({ invoice, clients, isOpen, onClose, onSave }) => {
       const today = new Date();
       const dueDate = new Date(today);
       dueDate.setDate(today.getDate() + 30);
-      
+
       setFormData({
         client_id: '',
         amount: '',

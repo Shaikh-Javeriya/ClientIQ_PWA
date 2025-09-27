@@ -10,6 +10,7 @@ import {
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import { useTheme } from './ThemeProvider';
+import CurrencyProvider from "./components/CurrencyContext";
 
 ChartJS.register(
   CategoryScale,
@@ -23,6 +24,14 @@ ChartJS.register(
 const ClientRevenueChart = ({ data }) => {
   const { getThemeColors } = useTheme();
   const colors = getThemeColors();
+  const { currency, locale } = useCurrency();
+  const formatCurrency = (value, options = {}) =>
+    new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: options.minFractionDigits ?? 0,
+      notation: options.notation || "standard", // default is normal numbers
+    }).format(value || 0);
 
   if (!data || data.length === 0) {
     return (
@@ -30,7 +39,7 @@ const ClientRevenueChart = ({ data }) => {
         <div className="text-center">
           <div className="w-16 h-16 mx-auto mb-4 opacity-20">
             <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M22 9v6c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V9c0-1.1.9-2 2-2h16c1.1 0 2 .9 2 2zm-4 0v6h2V9h-2zm-2 0H8v6h8V9zm-10 0H4v6h2V9z"/>
+              <path d="M22 9v6c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V9c0-1.1.9-2 2-2h16c1.1 0 2 .9 2 2zm-4 0v6h2V9h-2zm-2 0H8v6h8V9zm-10 0H4v6h2V9z" />
             </svg>
           </div>
           <p>No data available</p>
@@ -42,7 +51,7 @@ const ClientRevenueChart = ({ data }) => {
   // Handle different data formats - if it's invoice data, transform it to monthly revenue
   let chartData;
   let sortedData;
-  
+
   if (data[0] && data[0].invoice_date) {
     // This is invoice data - group by month
     const monthlyData = {};
@@ -57,7 +66,7 @@ const ClientRevenueChart = ({ data }) => {
         monthlyData[monthKey].profit += (invoice.amount || 0) * 0.75;
       }
     });
-    
+
     sortedData = Object.entries(monthlyData)
       .map(([month, data]) => ({
         client_name: month,
@@ -129,13 +138,9 @@ const ClientRevenueChart = ({ data }) => {
         cornerRadius: 8,
         displayColors: true,
         callbacks: {
-          label: function(context) {
+          label: function (context) {
             if (context.datasetIndex === 0) {
-              const value = new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD',
-                minimumFractionDigits: 0
-              }).format(context.parsed.y);
+              const value = formatCurrency(context.parsed.y);
               return `Revenue: ${value}`;
             } else {
               const hours = context.parsed.y / 100;
@@ -170,12 +175,8 @@ const ClientRevenueChart = ({ data }) => {
           font: {
             family: 'Inter'
           },
-          callback: function(value) {
-            return new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              notation: 'compact'
-            }).format(value);
+          callback: function (value) {
+            return formatCurrency(value);
           }
         }
       },
@@ -190,7 +191,7 @@ const ClientRevenueChart = ({ data }) => {
           font: {
             family: 'Inter'
           },
-          callback: function(value) {
+          callback: function (value) {
             return `${(value / 100).toFixed(0)}h`;
           }
         }

@@ -7,6 +7,7 @@ import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { useToast } from './ui/use-toast';
+import { useCurrency } from "./components/CurrencyContext";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -22,6 +23,9 @@ const ClientFormModal = ({ client, isOpen, onClose, onSave }) => {
   });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { currency, locale } = useCurrency();
+  const formatCurrency = (value) =>
+    new Intl.NumberFormat(locale, { style: "currency", currency }).format(value);
 
   useEffect(() => {
     if (client) {
@@ -158,7 +162,7 @@ const ClientFormModal = ({ client, isOpen, onClose, onSave }) => {
               </div>
 
               <div>
-                <Label htmlFor="hourly_rate">Hourly Rate ($) *</Label>
+                <Label htmlFor="hourly_rate">Hourly Rate ({currency}) *</Label>
                 <Input
                   id="hourly_rate"
                   type="number"

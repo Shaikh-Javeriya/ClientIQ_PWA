@@ -4,20 +4,16 @@ import { format } from 'date-fns';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { useCurrency } from "./components/CurrencyContext";
 
 const ClientInvoicesList = ({ invoices, projects, onMarkPaid, onSendReminder }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [projectFilter, setProjectFilter] = useState('all');
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount || 0);
-  };
+  const { currency, locale } = useCurrency();
+  const formatCurrency = (value) =>
+    new Intl.NumberFormat(locale, { style: "currency", currency }).format(value);
 
   const getStatusColor = (status, daysOverdue = 0) => {
     switch (status) {
@@ -47,14 +43,14 @@ const ClientInvoicesList = ({ invoices, projects, onMarkPaid, onSendReminder }) 
   };
 
   const filteredInvoices = invoices.filter(invoice => {
-    const matchesSearch = searchTerm === '' || 
+    const matchesSearch = searchTerm === '' ||
       invoice.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       getProjectName(invoice.project_id).toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
-    
+
     const matchesProject = projectFilter === 'all' || invoice.project_id === projectFilter;
-    
+
     return matchesSearch && matchesStatus && matchesProject;
   });
 
@@ -167,7 +163,7 @@ const ClientInvoicesList = ({ invoices, projects, onMarkPaid, onSendReminder }) 
                           <Check className="w-4 h-4" />
                         </Button>
                       )}
-                      
+
                       {invoice.status === 'overdue' && (
                         <Button
                           variant="ghost"

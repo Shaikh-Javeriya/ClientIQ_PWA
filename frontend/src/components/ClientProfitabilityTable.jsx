@@ -1,15 +1,17 @@
 import React from 'react';
 import { ArrowUpDown, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { format } from 'date-fns';
+import CurrencyProvider from "./components/CurrencyContext";
 
 const ClientProfitabilityTable = ({ data }) => {
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
+  const { currency, locale } = useCurrency();
+  const formatCurrency = (value, options = {}) => {
+    new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: options.minFractionDigits ?? 0,
+      notation: options.notation || "standard", // default is normal numbers
+    }).format(value || 0)
   };
 
   const formatNumber = (num) => {
@@ -118,7 +120,7 @@ const ClientProfitabilityTable = ({ data }) => {
                 </span>
               </td>
               <td className="text-gray-600">
-                {client.last_invoice_date 
+                {client.last_invoice_date
                   ? format(new Date(client.last_invoice_date), 'MMM dd, yyyy')
                   : 'No invoices'
                 }

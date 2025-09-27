@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { BarChart3, TrendingUp } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 import { format, subMonths, startOfMonth } from 'date-fns';
+import CurrencyProvider from "./components/CurrencyContext";
 
 ChartJS.register(
   CategoryScale,
@@ -30,6 +31,15 @@ ChartJS.register(
 const InvoicesCharts = ({ invoices, arAging }) => {
   const { getThemeColors } = useTheme();
   const colors = getThemeColors();
+  const { currency, locale } = useCurrency();
+  const formatCurrency = (value, options = {}) => {
+    new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: options.minFractionDigits ?? 0,
+      notation: options.notation || "standard", // default is normal numbers
+    }).format(value || 0)
+  };
 
   if (!invoices || invoices.length === 0) {
     return null;
@@ -81,12 +91,8 @@ const InvoicesCharts = ({ invoices, arAging }) => {
         borderWidth: 1,
         cornerRadius: 8,
         callbacks: {
-          label: function(context) {
-            const value = new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              minimumFractionDigits: 0
-            }).format(context.parsed.y);
+          label: function (context) {
+            const value = formatCurrency(context.parsed.y);
             return `Outstanding: ${value}`;
           }
         }
@@ -112,12 +118,8 @@ const InvoicesCharts = ({ invoices, arAging }) => {
           font: {
             family: 'Inter'
           },
-          callback: function(value) {
-            return new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              notation: 'compact'
-            }).format(value);
+          callback: function (value) {
+            return formatCurrency(value);
           }
         }
       }
@@ -133,7 +135,7 @@ const InvoicesCharts = ({ invoices, arAging }) => {
   const monthlyData = last6Months.map(month => {
     const monthStart = startOfMonth(month);
     const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
-    
+
     const monthInvoices = invoices.filter(invoice => {
       const invoiceDate = new Date(invoice.invoice_date);
       return invoiceDate >= monthStart && invoiceDate <= monthEnd;
@@ -228,12 +230,8 @@ const InvoicesCharts = ({ invoices, arAging }) => {
         cornerRadius: 8,
         displayColors: true,
         callbacks: {
-          label: function(context) {
-            const value = new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              minimumFractionDigits: 0
-            }).format(context.parsed.y);
+          label: function (context) {
+            const value = formatCurrency(context.parsed.y);
             return `${context.dataset.label}: ${value}`;
           }
         }
@@ -258,12 +256,8 @@ const InvoicesCharts = ({ invoices, arAging }) => {
           font: {
             family: 'Inter'
           },
-          callback: function(value) {
-            return new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              notation: 'compact'
-            }).format(value);
+          callback: function (value) {
+            return formatCurrency(value);
           }
         }
       }
@@ -293,25 +287,25 @@ const InvoicesCharts = ({ invoices, arAging }) => {
             <div className="flex justify-between">
               <span className="text-gray-600">Current (0-30):</span>
               <span className="font-semibold">
-                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(arAging['0-30'] || 0)}
+                {formatCurrency(arAging['0-30'] || 0)}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">31-60 Days:</span>
               <span className="font-semibold">
-                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(arAging['31-60'] || 0)}
+                {formatCurrency(arAging['31-60'] || 0)}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">61-90 Days:</span>
               <span className="font-semibold text-orange-600">
-                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(arAging['61-90'] || 0)}
+                {formatCurrency(arAging['61-90'] || 0)}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">90+ Days:</span>
               <span className="font-semibold text-red-600">
-                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(arAging['90+'] || 0)}
+                {formatCurrency(arAging['90+'] || 0)}
               </span>
             </div>
           </div>

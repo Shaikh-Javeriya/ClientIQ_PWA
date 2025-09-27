@@ -1,15 +1,17 @@
 import React from 'react';
 import { DollarSign, TrendingUp, Percent, CreditCard, Users, MapPin } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
+import CurrencyProvider from "./components/CurrencyContext";
 
 const ClientProfileCard = ({ client, summary }) => {
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount || 0);
+  const { currency, locale } = useCurrency();
+  const formatCurrency = (value, options = {}) => {
+    new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: options.minFractionDigits ?? 0,
+      notation: options.notation || "standard", // default is normal numbers
+    }).format(value || 0)
   };
 
   const getMarginColor = (margin) => {
@@ -54,21 +56,21 @@ const ClientProfileCard = ({ client, summary }) => {
                 </div>
               </div>
             </div>
-            
+
             {client.contact_email && (
               <div className="mb-2">
                 <span className="text-sm text-gray-600">Email: </span>
                 <span className="text-sm font-medium">{client.contact_email}</span>
               </div>
             )}
-            
+
             {client.contact_phone && (
               <div className="mb-2">
                 <span className="text-sm text-gray-600">Phone: </span>
                 <span className="text-sm font-medium">{client.contact_phone}</span>
               </div>
             )}
-            
+
             <div className="mb-2">
               <span className="text-sm text-gray-600">Hourly Rate: </span>
               <span className="text-sm font-medium">{formatCurrency(client.hourly_rate)}</span>
@@ -83,19 +85,19 @@ const ClientProfileCard = ({ client, summary }) => {
                 <p className="text-2xl font-bold text-green-600">{formatCurrency(summary.total_revenue)}</p>
                 <p className="text-sm text-gray-600">Total Revenue</p>
               </div>
-              
+
               <div className="text-center p-4 rounded-lg bg-white border">
                 <TrendingUp className="w-8 h-8 mx-auto mb-2 text-blue-600" />
                 <p className="text-2xl font-bold text-blue-600">{formatCurrency(summary.profit)}</p>
                 <p className="text-sm text-gray-600">Gross Profit</p>
               </div>
-              
+
               <div className={`text-center p-4 rounded-lg border ${getMarginColor(summary.margin_percent)}`}>
                 <Percent className="w-8 h-8 mx-auto mb-2" />
                 <p className="text-2xl font-bold">{(summary.margin_percent || 0).toFixed(1)}%</p>
                 <p className="text-sm">Margin</p>
               </div>
-              
+
               <div className={`text-center p-4 rounded-lg border ${summary.outstanding_ar > 0 ? 'text-red-600 bg-red-50' : 'text-gray-600 bg-gray-50'}`}>
                 <CreditCard className="w-8 h-8 mx-auto mb-2" />
                 <p className="text-2xl font-bold">{formatCurrency(summary.outstanding_ar)}</p>

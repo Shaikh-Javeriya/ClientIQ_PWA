@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { 
-  DollarSign, 
-  Search, 
-  Filter, 
-  Plus, 
-  Eye, 
+import {
+  DollarSign,
+  Search,
+  Filter,
+  Plus,
+  Eye,
   Check,
   Mail,
   Edit,
@@ -21,6 +21,7 @@ import InvoicesTable from './InvoicesTable';
 import InvoicesCharts from './InvoicesCharts';
 import InvoiceFormModal from './InvoiceFormModal';
 import { useToast } from './ui/use-toast';
+import CurrencyProvider from "./components/CurrencyContext";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -37,6 +38,15 @@ const InvoicesPage = ({ user }) => {
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const { toast } = useToast();
+  const { currency, locale } = useCurrency();
+  const formatCurrency = (value, options = {}) => {
+    new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: options.minFractionDigits ?? 0,
+      notation: options.notation || "standard", // default is normal numbers
+    }).format(value || 0)
+  };
 
   const fetchData = async () => {
     try {
@@ -46,18 +56,18 @@ const InvoicesPage = ({ user }) => {
         axios.get(`${API}/clients`),
         axios.get(`${API}/invoices/ar-aging`)
       ]);
-      
+
       // Enrich invoices with client names
       const invoicesWithClients = invoicesResponse.data.map(invoice => {
         const client = clientsResponse.data.find(c => c.id === invoice.client_id);
         return {
           ...invoice,
           client_name: client?.name || 'Unknown Client',
-          days_overdue: invoice.status === 'overdue' ? 
+          days_overdue: invoice.status === 'overdue' ?
             Math.max(0, Math.floor((new Date() - new Date(invoice.due_date)) / (1000 * 60 * 60 * 24))) : 0
         };
       });
-      
+
       setInvoices(invoicesWithClients);
       setFilteredInvoices(invoicesWithClients);
       setClients(clientsResponse.data);
@@ -164,7 +174,7 @@ Dear ${invoice.client_name},
 
 We hope this message finds you well. We wanted to reach out regarding the outstanding invoice details below:
 
-Invoice Amount: ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(invoice.amount || 0)}
+Invoice Amount: ${formatCurrency(invoice.amount || 0)}
 Due Date: ${new Date(invoice.due_date).toLocaleDateString()}
 Days Overdue: ${invoice.days_overdue || 0} days
 
@@ -187,10 +197,10 @@ Your Account Team`;
   };
 
   const downloadCSVTemplate = () => {
-    const csvTemplate = `client_name,amount,hours_billed,invoice_date,due_date,status
-"TechCorp Solutions",6000,40,"2024-01-15","2024-02-14","paid"
-"Digital Marketing Pro",4500,30,"2024-02-01","2024-03-03","unpaid"
-"StartupXYZ",7200,48,"2024-02-15","2024-03-17","overdue"`;
+    const csvTemplate = `client_id,amount,hours_billed,invoice_date,due_date,status
+"sample-uuid-1234",1200,10,2025-09-20,2025-09-21,paid
+"sample-uuid-5678",1800,12,2025-08-15,2025-08-13,overdue
+"sample-uuid-9012",1980,11,2025-09-08,2025-09-09,unpaid`;
 
     const blob = new Blob([csvTemplate], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -209,112 +219,119 @@ Your Account Team`;
   };
 
   const handleImportCSV = (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
+    const file = event.target.files[0];
+    if (!file) return;
 
-  toast({
-    title: "Processing CSV",
-    description: "Reading and importing invoice data...",
-  });
+    toast({
+      title: "Processing CSV",
+      description: "Reading and importing invoice data...",
+    });
 
-  const reader = new FileReader();
-  reader.onload = async (e) => {
-    try {
-      const csv = e.target.result;
-      const lines = csv.split('\n').filter(line => line.trim());
-      
-      if (lines.length <= 1) {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const csv = e.target.result;
+        const lines = csv.split('\n').filter(line => line.trim());
+
+        if (lines.length <= 1) {
+          toast({
+            title: "Import Error",
+            description: "CSV file appears to be empty or contains only headers",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        let importedCount = 0;
+        let errorCount = 0;
+
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+
+          const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+          if (values.length < 6) { // expect 6 columns
+            errorCount++;
+            continue;
+          }
+
+          // Column 0 can be Client ID or Client Name
+          let clientId = values[0].trim();
+
+          // If it's a UUID (contains "-"), assume it's an ID
+          if (clientId.includes("-")) {
+            const client = clients.find(c => c.id === clientId);
+            if (!client) {
+              console.error(`No matching client ID found for row:`, values);
+              errorCount++;
+              continue;
+            }
+          } else {
+            // Otherwise match by exact name
+            const clientName = clientId.toLowerCase();
+            const client = clients.find(c => (c.name || "").toLowerCase() === clientName);
+            clientId = client ? client.id : null;
+          }
+
+          if (!clientId) {
+            errorCount++;
+            continue;
+          }
+
+
+          const amount = parseFloat(values[1]);
+          const hours = parseFloat(values[2]);
+
+          if (isNaN(amount) || isNaN(hours)) {
+            console.error("Invalid amount/hours:", values);
+            errorCount++;
+            continue;
+          }
+
+          const invoiceData = {
+            client_id: clientId,
+            amount: amount,                    // Amount column
+            hours_billed: hours,               // Hours Billed column
+            invoice_date: values[3] || new Date().toISOString(),
+            due_date: values[4] || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            status: values[5] || 'unpaid'
+          };
+
+          try {
+            await axios.post(`${API}/invoices`, invoiceData);
+            importedCount++;
+          } catch (error) {
+            console.error('Error importing invoice:', error);
+            errorCount++;
+          }
+        }
+
+        if (importedCount > 0) {
+          await fetchData();  // refresh invoices + clients
+          toast({
+            title: "Import Successful",
+            description: `Imported ${importedCount} invoices successfully${errorCount > 0 ? `. ${errorCount} rows had errors.` : '.'}`,
+          });
+        } else {
+          toast({
+            title: "Import Failed",
+            description: "No invoices could be imported. Please check your CSV format and client names.",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error('Error parsing CSV:', error);
         toast({
           title: "Import Error",
-          description: "CSV file appears to be empty or contains only headers",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      let importedCount = 0;
-      let errorCount = 0;
-      
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-        
-        const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
-        if (values.length < 6) { // expect 6 columns
-          errorCount++;
-          continue;
-        }
-        
-        // Find client by ID or exact name
-        let clientId = values[0].trim();
-        if (!clientId.includes("-")) {
-          const clientName = clientId.toLowerCase();
-          const client = clients.find(c =>
-            (c.name || "").toLowerCase() === clientName ||
-            (c.client_name || "").toLowerCase() === clientName
-          );
-          clientId = client ? client.id : null;
-        }
-
-        if (!clientId) {
-          console.error(`No matching client found for row:`, values);
-          errorCount++;
-          continue;
-        }
-
-        const amount = parseFloat(values[1]);
-        const hours = parseFloat(values[2]);
-
-        if (isNaN(amount) || isNaN(hours)) {
-          console.error("Invalid amount/hours:", values);
-          errorCount++;
-          continue;
-        }
-
-        const invoiceData = {
-          client_id: clientId,
-          amount: amount,                    // Amount column
-          hours_billed: hours,               // Hours Billed column
-          invoice_date: values[3] || new Date().toISOString(),
-          due_date: values[4] || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          status: values[5] || 'unpaid'
-        };
-        
-        try {
-          await axios.post(`${API}/invoices`, invoiceData);
-          importedCount++;
-        } catch (error) {
-          console.error('Error importing invoice:', error);
-          errorCount++;
-        }
-      }
-      
-      if (importedCount > 0) {
-        await fetchData();  // refresh invoices + clients
-        toast({
-          title: "Import Successful",
-          description: `Imported ${importedCount} invoices successfully${errorCount > 0 ? `. ${errorCount} rows had errors.` : '.'}`,
-        });
-      } else {
-        toast({
-          title: "Import Failed",
-          description: "No invoices could be imported. Please check your CSV format and client names.",
+          description: "Failed to parse CSV file. Please check the format.",
           variant: "destructive",
         });
       }
-    } catch (error) {
-      console.error('Error parsing CSV:', error);
-      toast({
-        title: "Import Error",
-        description: "Failed to parse CSV file. Please check the format.",
-        variant: "destructive",
-      });
-    }
+    };
+
+    reader.readAsText(file);
+    event.target.value = ''; // Reset file input
   };
-  
-  reader.readAsText(file);
-  event.target.value = ''; // Reset file input
-};
 
   const handleInvoiceSaved = () => {
     setShowInvoiceModal(false);
@@ -409,18 +426,18 @@ Your Account Team`;
             </Select>
 
             <div className="flex items-center space-x-2">
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 className="flex items-center space-x-2"
                 onClick={() => document.getElementById('csv-upload-invoices').click()}
               >
                 <Upload className="w-4 h-4" />
                 <span>Import CSV</span>
               </Button>
-              <Button 
-                type="button" 
-                variant="ghost" 
+              <Button
+                type="button"
+                variant="ghost"
                 size="sm"
                 onClick={downloadCSVTemplate}
                 className="text-xs"
@@ -452,7 +469,7 @@ Your Account Team`;
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <InvoicesTable 
+          <InvoicesTable
             invoices={filteredInvoices}
             onEdit={handleEditInvoice}
             onDelete={handleDeleteInvoice}

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { 
-  BarChart3, 
-  TrendingUp, 
-  Users, 
-  DollarSign, 
-  Clock, 
+import {
+  BarChart3,
+  TrendingUp,
+  Users,
+  DollarSign,
+  Clock,
   AlertTriangle,
   Database
 } from 'lucide-react';
@@ -18,6 +18,7 @@ import ClientRevenueChart from './ClientRevenueChart';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { useToast } from './ui/use-toast';
+import CurrencyProvider from "./components/CurrencyContext";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -30,6 +31,15 @@ const Dashboard = ({ user }) => {
   const [error, setError] = useState('');
   const [sampleDataLoading, setSampleDataLoading] = useState(false);
   const { toast } = useToast();
+  const { currency, locale } = useCurrency();
+  const formatCurrency = (value, options = {}) => {
+    new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: options.minFractionDigits ?? 0,
+      notation: options.notation || "standard", // default is normal numbers
+    }).format(value || 0)
+  };
 
   const fetchDashboardData = async () => {
     try {
@@ -120,7 +130,7 @@ const Dashboard = ({ user }) => {
           </CardHeader>
           <CardContent>
             <p className="text-gray-600 mb-4">
-              It looks like you don't have any data yet. Generate sample data to see how the dashboard works, 
+              It looks like you don't have any data yet. Generate sample data to see how the dashboard works,
               or start by adding your own clients and invoices.
             </p>
             <Button

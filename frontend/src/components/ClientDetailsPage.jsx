@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { 
-  Users, 
-  Search, 
+import {
+  Users,
+  Search,
   Eye
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -12,6 +12,7 @@ import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import ClientDrillthrough from './ClientDrillthrough';
 import { useToast } from './ui/use-toast';
+import { useCurrency } from "./components/CurrencyContext";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -29,11 +30,11 @@ const ClientDetailsPage = ({ user }) => {
       setLoading(true);
       const response = await axios.get(`${API}/clients`);
       const clientsData = response.data;
-      
+
       // Fetch profitability data for each client
       const profitabilityResponse = await axios.get(`${API}/dashboard/client-profitability`);
       const profitabilityData = profitabilityResponse.data;
-      
+
       // Merge client data with profitability data
       const enrichedClients = clientsData.map(client => {
         const profitability = profitabilityData.find(p => p.client_id === client.id);
@@ -42,9 +43,9 @@ const ClientDetailsPage = ({ user }) => {
           ...profitability
         };
       });
-      
+
       setClients(enrichedClients);
-      
+
       // Auto-select first client if none selected
       if (!selectedClientId && enrichedClients.length > 0) {
         setSelectedClientId(enrichedClients[0].id);
@@ -70,14 +71,9 @@ const ClientDetailsPage = ({ user }) => {
     client.client_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount || 0);
-  };
+  const { currency, locale } = useCurrency();
+  const formatCurrency = (value) =>
+    new Intl.NumberFormat(locale, { style: "currency", currency }).format(value);
 
   if (loading) {
     return (
@@ -116,7 +112,7 @@ const ClientDetailsPage = ({ user }) => {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Client Details</h1>
           <p className="text-gray-600">Detailed view and project management for selected client</p>
         </div>
-        
+
         <div className="flex items-center space-x-4 w-full sm:w-auto">
           <div className="relative flex-1 sm:flex-none sm:w-64">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -127,7 +123,7 @@ const ClientDetailsPage = ({ user }) => {
               className="pl-10"
             />
           </div>
-          
+
           <Select value={selectedClientId || ''} onValueChange={setSelectedClientId}>
             <SelectTrigger className="w-full sm:w-64">
               <SelectValue placeholder="Select a client" />

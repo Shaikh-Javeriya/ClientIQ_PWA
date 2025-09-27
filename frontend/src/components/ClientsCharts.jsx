@@ -13,6 +13,7 @@ import { Bar, Scatter } from 'react-chartjs-2';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { BarChart3, Activity } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
+import CurrencyProvider from "./components/CurrencyContext";
 
 ChartJS.register(
   CategoryScale,
@@ -27,6 +28,14 @@ ChartJS.register(
 const ClientsCharts = ({ clients }) => {
   const { getThemeColors } = useTheme();
   const colors = getThemeColors();
+  const { currency, locale } = useCurrency();
+  const formatCurrency = (value, options = {}) =>
+    new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: options.minFractionDigits ?? 0,
+      notation: options.notation || "standard", // default is normal numbers
+    }).format(value || 0);
 
   if (!clients || clients.length === 0) {
     return null;
@@ -92,12 +101,8 @@ const ClientsCharts = ({ clients }) => {
         cornerRadius: 8,
         displayColors: true,
         callbacks: {
-          label: function(context) {
-            const value = new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              minimumFractionDigits: 0
-            }).format(context.parsed.y);
+          label: function (context) {
+            const value = formatCurrency(context.parsed.y);
             return `${context.dataset.label}: ${value}`;
           }
         }
@@ -125,12 +130,8 @@ const ClientsCharts = ({ clients }) => {
           font: {
             family: 'Inter'
           },
-          callback: function(value) {
-            return new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              notation: 'compact'
-            }).format(value);
+          callback: function (value) {
+            return formatCurrency(value);
           }
         }
       }
@@ -177,18 +178,14 @@ const ClientsCharts = ({ clients }) => {
         borderWidth: 1,
         cornerRadius: 8,
         callbacks: {
-          title: function(context) {
+          title: function (context) {
             return context[0].raw.clientName;
           },
-          label: function(context) {
+          label: function (context) {
             const data = context.raw;
             return [
               `Hours: ${data.x.toFixed(1)}h`,
-              `Revenue: ${new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD',
-                minimumFractionDigits: 0
-              }).format(data.y)}`,
+              `Revenue: ${formatCurrency(data.y)}`,
               `Margin: ${data.margin.toFixed(1)}%`
             ];
           }
@@ -230,12 +227,8 @@ const ClientsCharts = ({ clients }) => {
           font: {
             family: 'Inter'
           },
-          callback: function(value) {
-            return new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              notation: 'compact'
-            }).format(value);
+          callback: function (value) {
+            return formatCurrency(value);
           }
         }
       }

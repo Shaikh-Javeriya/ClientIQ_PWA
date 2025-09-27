@@ -1,15 +1,17 @@
 import React from 'react';
 import { DollarSign, TrendingUp, Percent, Clock, CreditCard, Timer } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
+import CurrencyProvider from "./components/CurrencyContext";
 
 const KPICards = ({ data }) => {
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
+  const { currency, locale } = useCurrency();
+  const formatCurrency = (value, options = {}) => {
+    new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: options.minFractionDigits ?? 0,
+      notation: options.notation || "standard", // default is normal numbers
+    }).format(value || 0)
   };
 
   const formatNumber = (num) => {
@@ -90,7 +92,7 @@ const KPICards = ({ data }) => {
                   <Icon className={`w-6 h-6 ${item.color}`} />
                 </div>
               </div>
-              
+
               {/* Trend indicator placeholder */}
               <div className="mt-4 flex items-center">
                 <div className="flex items-center text-sm text-gray-500">

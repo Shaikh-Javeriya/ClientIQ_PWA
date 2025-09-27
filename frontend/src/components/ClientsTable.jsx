@@ -3,15 +3,17 @@ import { Link } from 'react-router-dom';
 import { Eye, Download, Mail, Edit, Trash2, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from './ui/button';
+import CurrencyProvider from "./components/CurrencyContext";
 
 const ClientsTable = ({ clients, onEdit, onDelete, onExport, onSendReminder }) => {
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount || 0);
+  const { currency, locale } = useCurrency();
+  const formatCurrency = (value, options = {}) => {
+    new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: options.minFractionDigits ?? 0,
+      notation: options.notation || "standard", // default is normal numbers
+    }).format(value || 0)
   };
 
   const formatNumber = (num) => {
@@ -65,6 +67,7 @@ const ClientsTable = ({ clients, onEdit, onDelete, onExport, onSendReminder }) =
       <table className="data-table">
         <thead>
           <tr>
+            <th className="text-left">Client ID</th>
             <th className="text-left">Client Name</th>
             <th className="text-left">Tier</th>
             <th className="text-left">Region</th>
@@ -80,12 +83,21 @@ const ClientsTable = ({ clients, onEdit, onDelete, onExport, onSendReminder }) =
         <tbody>
           {clients.map((client, index) => (
             <tr key={client.id || client.client_id || index} className="hover:bg-gray-50 transition-colors duration-200">
+              <td className="text-gray-500 text-xs">
+                <button
+                  onClick={() => navigator.clipboard.writeText(client.id || client.client_id)}
+                  className="text-blue-500 underline hover:text-blue-700"
+                  title="Copy Client ID"
+                >
+                  Copy
+                </button>
+              </td>
               <td className="font-medium text-gray-900">
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
                     {(client.client_name || client.name || 'C').charAt(0)}
                   </div>
-                  <Link 
+                  <Link
                     to={`/clients/${client.id || client.client_id}`}
                     className="cursor-pointer hover:text-blue-600 transition-colors font-medium"
                   >
@@ -122,7 +134,7 @@ const ClientsTable = ({ clients, onEdit, onDelete, onExport, onSendReminder }) =
                 </span>
               </td>
               <td className="text-gray-600">
-                {client.last_invoice_date 
+                {client.last_invoice_date
                   ? format(new Date(client.last_invoice_date), 'MMM dd, yyyy')
                   : 'No invoices'
                 }
@@ -138,7 +150,7 @@ const ClientsTable = ({ clients, onEdit, onDelete, onExport, onSendReminder }) =
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
-                  
+
                   <Button
                     variant="ghost"
                     size="sm"
@@ -148,7 +160,7 @@ const ClientsTable = ({ clients, onEdit, onDelete, onExport, onSendReminder }) =
                   >
                     <Download className="w-4 h-4" />
                   </Button>
-                  
+
                   {client.outstanding_ar > 0 && (
                     <Button
                       variant="ghost"
@@ -160,7 +172,7 @@ const ClientsTable = ({ clients, onEdit, onDelete, onExport, onSendReminder }) =
                       <Mail className="w-4 h-4" />
                     </Button>
                   )}
-                  
+
                   <Button
                     variant="ghost"
                     size="sm"

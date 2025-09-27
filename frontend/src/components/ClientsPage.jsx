@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { 
-  Users, 
-  Search, 
-  Filter, 
-  Plus, 
-  Eye, 
-  Download, 
+import {
+  Users,
+  Search,
+  Filter,
+  Plus,
+  Eye,
+  Download,
   Mail,
   Edit,
   Trash2,
@@ -20,6 +20,7 @@ import ClientsTable from './ClientsTable';
 import ClientsCharts from './ClientsCharts';
 import ClientFormModal from './ClientFormModal';
 import { useToast } from './ui/use-toast';
+import CurrencyProvider from "./components/CurrencyContext";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -35,17 +36,25 @@ const ClientsPage = ({ user }) => {
   const [showClientModal, setShowClientModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
   const { toast } = useToast();
+  const { currency, locale } = useCurrency();
+  const formatCurrency = (value, options = {}) =>
+    new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: options.minFractionDigits ?? 0,
+      notation: options.notation || "standard", // default is normal numbers
+    }).format(value || 0);
 
   const fetchClients = async () => {
     try {
       setLoading(true);
       const response = await axios.get(`${API}/clients`);
       const clientsData = response.data;
-      
+
       // Fetch profitability data for each client
       const profitabilityResponse = await axios.get(`${API}/dashboard/client-profitability`);
       const profitabilityData = profitabilityResponse.data;
-      
+
       // Merge client data with profitability data
       const enrichedClients = clientsData.map(client => {
         const profitability = profitabilityData.find(p => p.client_id === client.id);
@@ -54,7 +63,7 @@ const ClientsPage = ({ user }) => {
           ...profitability
         };
       });
-      
+
       setClients(enrichedClients);
       setFilteredClients(enrichedClients);
     } catch (error) {
@@ -162,6 +171,7 @@ const ClientsPage = ({ user }) => {
   const handleExportClient = (client) => {
     const csvContent = [
       ['Field', 'Value'],
+      ['Client ID', client.id || client.client_id],
       ['Client Name', client.client_name || client.name],
       ['Tier', client.tier],
       ['Region', client.region],
@@ -195,7 +205,7 @@ const ClientsPage = ({ user }) => {
 
 Dear ${client.client_name || client.name},
 
-We hope this message finds you well. We wanted to reach out regarding outstanding invoices totaling ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(client.outstanding_ar || 0)}.
+We hope this message finds you well. We wanted to reach out regarding outstanding invoices totaling ${formatCurrency(client.outstanding_ar || 0)}.
 
 Please review your account and process payment at your earliest convenience.
 
@@ -216,10 +226,10 @@ Your Account Team`;
   };
 
   const downloadCSVTemplate = () => {
-    const csvTemplate = `name,tier,region,contact_email,contact_phone,hourly_rate
-"Sample Client 1",SMB,"North America","client1@example.com","+1-555-123-4567",120
-"Sample Client 2",Enterprise,"Europe","client2@example.com","+44-20-1234-5678",180
-"Sample Client 3",Freelance,"Asia Pacific","client3@example.com","+81-3-1234-5678",95`;
+    const csvTemplate = `id,name,tier,region,contact_email,contact_phone,hourly_rate
+"sample-uuid-1234","Sample Client 1",SMB,"North America","client1@example.com","+1-555-123-4567",120
+"sample-uuid-5678","Sample Client 2",Enterprise,"Europe","client2@example.com","+44-20-1234-5678",180
+"sample-uuid-9012","Sample Client 3",Freelance,"Asia Pacific","client3@example.com","+81-3-1234-5678",95`;
 
     const blob = new Blob([csvTemplate], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -237,6 +247,7 @@ Your Account Team`;
     });
   };
 
+
   const handleImportCSV = (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -251,7 +262,7 @@ Your Account Team`;
       try {
         const csv = e.target.result;
         const lines = csv.split('\n').filter(line => line.trim());
-        
+
         if (lines.length <= 1) {
           toast({
             title: "Import Error",
@@ -260,21 +271,21 @@ Your Account Team`;
           });
           return;
         }
-        
+
         // Expected headers: name, tier, region, contact_email, contact_phone, hourly_rate
         let importedCount = 0;
         let errorCount = 0;
-        
+
         for (let i = 1; i < lines.length; i++) {
           const line = lines[i].trim();
           if (!line) continue;
-          
+
           const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
           if (values.length < 3) {
             errorCount++;
             continue;
           }
-          
+
           const clientData = {
             name: values[0] || `Client ${i}`,
             tier: values[1] || 'SMB',
@@ -283,7 +294,7 @@ Your Account Team`;
             contact_phone: values[4] || '',
             hourly_rate: parseFloat(values[5]) || 100
           };
-          
+
           try {
             await axios.post(`${API}/clients`, clientData);
             importedCount++;
@@ -292,7 +303,7 @@ Your Account Team`;
             errorCount++;
           }
         }
-        
+
         if (importedCount > 0) {
           await fetchClients();
           toast({
@@ -315,7 +326,7 @@ Your Account Team`;
         });
       }
     };
-    
+
     reader.readAsText(file);
     event.target.value = ''; // Reset file input
   };
@@ -398,18 +409,18 @@ Your Account Team`;
             </Select>
 
             <div className="flex items-center space-x-2">
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 className="flex items-center space-x-2"
                 onClick={() => document.getElementById('csv-upload-clients').click()}
               >
                 <Upload className="w-4 h-4" />
                 <span>Import CSV</span>
               </Button>
-              <Button 
-                type="button" 
-                variant="ghost" 
+              <Button
+                type="button"
+                variant="ghost"
                 size="sm"
                 onClick={downloadCSVTemplate}
                 className="text-xs"
@@ -441,7 +452,7 @@ Your Account Team`;
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ClientsTable 
+          <ClientsTable
             clients={filteredClients}
             onEdit={handleEditClient}
             onDelete={handleDeleteClient}
