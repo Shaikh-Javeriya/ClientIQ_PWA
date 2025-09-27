@@ -247,30 +247,54 @@ Your Account Team`;
           }
           
           // Find client by name or ID
-          let clientId = values[0];
-          if (!clientId || !clientId.includes('-')) {
+          //let clientId = values[0];
+          //if (!clientId || !clientId.includes('-')) {
             // Try to find client by name
-            const clientName = values[0];
-            const client = clients.find(c => 
-              c.name?.toLowerCase().includes(clientName.toLowerCase()) ||
-              c.client_name?.toLowerCase().includes(clientName.toLowerCase())
-            );
-            clientId = client ? client.id : '';
+            //const clientName = values[0];
+            //const client = clients.find(c => 
+              //c.name?.toLowerCase().includes(clientName.toLowerCase()) ||
+              //c.client_name?.toLowerCase().includes(clientName.toLowerCase())
+            //);
+            //clientId = client ? client.id : '';
+          //}
+          // Find client by ID or exact name
+          let clientId = values[0].trim();
+          // If it looks like a name (not UUID), try to resolve against loaded clients
+          if (!clientId.includes("-")) {
+            const clientName = values[0].trim().toLowerCase();
+            const client = clients.find(c =>
+              (c.name || "").toLowerCase() === clientName ||
+              (c.client_name || "").toLowerCase() === clientName
+                                       );
+            clientId = client ? client.id : null;
           }
-          
           if (!clientId) {
+            console.error(`No matching client found for row:`, values);
             errorCount++;
-            continue;
+            continue; // skip this invoice row
           }
-          
+
           const invoiceData = {
             client_id: clientId,
-            amount: parseFloat(values[1]) || 0,
-            hours_billed: parseFloat(values[2]) || 0,
+            amount: parseFloat(values[2]) || 0,       // careful: your CSV is Hours Billed, Amount
+            hours_billed: parseFloat(values[1]) || 0, // swapped order
             invoice_date: values[3] || new Date().toISOString(),
-            due_date: values[4] || new Date(Date.now() + 30*24*60*60*1000).toISOString(),
+            due_date: values[4] || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             status: values[5] || 'unpaid'
           };
+          //if (!clientId) {
+            //errorCount++;
+            //continue;
+          //}
+          
+          //const invoiceData = {
+            //client_id: clientId,
+            //amount: parseFloat(values[1]) || 0,
+            //hours_billed: parseFloat(values[2]) || 0,
+            //invoice_date: values[3] || new Date().toISOString(),
+            //due_date: values[4] || new Date(Date.now() + 30*24*60*60*1000).toISOString(),
+            //status: values[5] || 'unpaid'
+          //};
           
           try {
             await axios.post(`${API}/invoices`, invoiceData);
