@@ -10,6 +10,7 @@ import {
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import { useTheme } from './ThemeProvider';
+import CurrencyProvider from "./components/CurrencyContext";
 
 ChartJS.register(
   CategoryScale,
@@ -23,6 +24,15 @@ ChartJS.register(
 const ProjectProfitabilityChart = ({ projects }) => {
   const { getThemeColors } = useTheme();
   const colors = getThemeColors();
+  const { currency, locale } = useCurrency();
+  const formatCurrency = (value, options = {}) => {
+    new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: options.minFractionDigits ?? 0,
+      notation: options.notation || "standard", // default is normal numbers
+    }).format(value || 0)
+  };
 
   if (!projects || projects.length === 0) {
     return (
@@ -30,7 +40,7 @@ const ProjectProfitabilityChart = ({ projects }) => {
         <div className="text-center">
           <div className="w-16 h-16 mx-auto mb-4 opacity-20">
             <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M22 9v6c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V9c0-1.1.9-2 2-2h16c1.1 0 2 .9 2 2z"/>
+              <path d="M22 9v6c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V9c0-1.1.9-2 2-2h16c1.1 0 2 .9 2 2z" />
             </svg>
           </div>
           <p>No projects available</p>
@@ -97,12 +107,8 @@ const ProjectProfitabilityChart = ({ projects }) => {
         cornerRadius: 8,
         displayColors: true,
         callbacks: {
-          label: function(context) {
-            const value = new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              minimumFractionDigits: 0
-            }).format(context.parsed.y);
+          label: function (context) {
+            const value = formatCurrency(context.parsed.y);
             return `${context.dataset.label}: ${value}`;
           }
         }
@@ -130,12 +136,8 @@ const ProjectProfitabilityChart = ({ projects }) => {
           font: {
             family: 'Inter'
           },
-          callback: function(value) {
-            return new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              notation: 'compact'
-            }).format(value);
+          callback: function (value) {
+            return formatCurrency(value);
           }
         }
       }

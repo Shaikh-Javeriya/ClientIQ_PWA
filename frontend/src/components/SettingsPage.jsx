@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Settings, 
-  Palette, 
-  DollarSign, 
+import {
+  Settings,
+  Palette,
+  DollarSign,
   Calculator,
   Globe,
   Moon,
@@ -18,21 +18,23 @@ import { Switch } from './ui/switch';
 import { useTheme } from './ThemeProvider';
 import { useToast } from './ui/use-toast';
 import ThemeSelector from './ThemeSelector';
+import CurrencyProvider from "./components/CurrencyContext";
 
 const SettingsPage = ({ user }) => {
   const { currentTheme, themes, switchTheme } = useTheme();
   const { toast } = useToast();
+  const { updateSettings } = useCurrency();
 
   // Settings state
   const [settings, setSettings] = useState({
     // Margin Thresholds
     lowMarginThreshold: 15,
     highMarginThreshold: 30,
-    
+
     // Overhead Allocation
     overheadMethod: 'percentage', // 'percentage' or 'fixed'
     overheadValue: 25,
-    
+
     // Currency & Locale
     currency: 'USD',
     locale: 'en-US'
@@ -65,8 +67,9 @@ const SettingsPage = ({ user }) => {
   const handleSaveSettings = () => {
     try {
       localStorage.setItem('dashboard_settings', JSON.stringify(settings));
+      updateSettings(settings.currency, settings.locale);
       setHasChanges(false);
-      
+
       toast({
         title: "Settings Saved",
         description: "Your preferences have been saved successfully",
@@ -99,11 +102,7 @@ const SettingsPage = ({ user }) => {
 
   const locales = [
     { code: 'en-US', name: 'English (US)' },
-    { code: 'en-GB', name: 'English (UK)' },
-    { code: 'de-DE', name: 'German' },
-    { code: 'fr-FR', name: 'French' },
-    { code: 'es-ES', name: 'Spanish' },
-    { code: 'ja-JP', name: 'Japanese' }
+    { code: 'en-GB', name: 'English (UK)' }
   ];
 
   return (
@@ -143,8 +142,8 @@ const SettingsPage = ({ user }) => {
                     onClick={() => switchTheme(key)}
                     className={`
                       flex items-center justify-between p-3 rounded-lg border-2 transition-all duration-200
-                      ${currentTheme === key 
-                        ? 'border-blue-300 bg-blue-50' 
+                      ${currentTheme === key
+                        ? 'border-blue-300 bg-blue-50'
                         : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                       }
                     `}
@@ -269,8 +268,8 @@ const SettingsPage = ({ user }) => {
           <CardContent className="space-y-6">
             <div>
               <Label htmlFor="currency">Currency</Label>
-              <Select 
-                value={settings.currency} 
+              <Select
+                value={settings.currency}
                 onValueChange={(value) => handleSettingChange('currency', value)}
               >
                 <SelectTrigger>
@@ -288,8 +287,8 @@ const SettingsPage = ({ user }) => {
 
             <div>
               <Label htmlFor="locale">Number Format</Label>
-              <Select 
-                value={settings.locale} 
+              <Select
+                value={settings.locale}
                 onValueChange={(value) => handleSettingChange('locale', value)}
               >
                 <SelectTrigger>
@@ -336,10 +335,10 @@ const SettingsPage = ({ user }) => {
             </div>
             <div>
               <Label>Account Created</Label>
-              <Input 
-                value={new Date(user.created_at).toLocaleDateString()} 
-                disabled 
-                className="bg-gray-50" 
+              <Input
+                value={new Date(user.created_at).toLocaleDateString()}
+                disabled
+                className="bg-gray-50"
               />
             </div>
           </CardContent>

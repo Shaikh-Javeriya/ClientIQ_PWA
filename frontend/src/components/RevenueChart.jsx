@@ -12,6 +12,7 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { useTheme } from './ThemeProvider';
+import CurrencyProvider from "./components/CurrencyContext";
 
 ChartJS.register(
   CategoryScale,
@@ -27,6 +28,15 @@ ChartJS.register(
 const RevenueChart = ({ data }) => {
   const { getThemeColors } = useTheme();
   const colors = getThemeColors();
+  const { currency, locale } = useCurrency();
+  const formatCurrency = (value, options = {}) => {
+    new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: options.minFractionDigits ?? 0,
+      notation: options.notation || "standard", // default is normal numbers
+    }).format(value || 0)
+  };
 
   if (!data || data.length === 0) {
     return (
@@ -34,7 +44,7 @@ const RevenueChart = ({ data }) => {
         <div className="text-center">
           <div className="w-16 h-16 mx-auto mb-4 opacity-20">
             <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+              <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
             </svg>
           </div>
           <p>No revenue data available</p>
@@ -46,9 +56,9 @@ const RevenueChart = ({ data }) => {
   const chartData = {
     labels: data.map(item => {
       const [year, month] = item.month.split('-');
-      return new Date(year, month - 1).toLocaleDateString('en-US', { 
-        month: 'short', 
-        year: '2-digit' 
+      return new Date(year, month - 1).toLocaleDateString('en-US', {
+        month: 'short',
+        year: '2-digit'
       });
     }),
     datasets: [
@@ -109,12 +119,8 @@ const RevenueChart = ({ data }) => {
         cornerRadius: 8,
         displayColors: true,
         callbacks: {
-          label: function(context) {
-            const value = new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              minimumFractionDigits: 0
-            }).format(context.parsed.y);
+          label: function (context) {
+            const value = formatCurrency(context.parsed.y);
             return `${context.dataset.label}: ${value}`;
           }
         }
@@ -139,12 +145,8 @@ const RevenueChart = ({ data }) => {
           font: {
             family: 'Inter'
           },
-          callback: function(value) {
-            return new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              notation: 'compact'
-            }).format(value);
+          callback: function (value) {
+            return formatCurrency(value);
           }
         }
       }
