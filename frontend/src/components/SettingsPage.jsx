@@ -18,7 +18,7 @@ import { Switch } from './ui/switch';
 import { useTheme } from './ThemeProvider';
 import { useToast } from './ui/use-toast';
 import ThemeSelector from './ThemeSelector';
-import CurrencyProvider from "./CurrencyContext";
+import { useCurrency } from "./CurrencyContext";
 
 const SettingsPage = ({ user }) => {
   const { currentTheme, themes, switchTheme } = useTheme();
