@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowUpDown, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { format } from 'date-fns';
-import CurrencyProvider from "./CurrencyContext";
+import { useCurrency } from "./CurrencyContext";
 
 const ClientProfitabilityTable = ({ data }) => {
   const { currency, locale } = useCurrency();
