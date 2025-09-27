@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Eye, Download, Mail, Edit, Trash2, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from './ui/button';
-import CurrencyProvider from "./CurrencyContext";
+import { useCurrency } from "./CurrencyContext";
 
 const ClientsTable = ({ clients, onEdit, onDelete, onExport, onSendReminder }) => {
   const { currency, locale } = useCurrency();
