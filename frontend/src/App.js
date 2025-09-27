@@ -13,6 +13,7 @@ import ClientDetailsPage from './components/ClientDetailsPage';
 import SettingsPage from './components/SettingsPage';
 import MainLayout from './components/MainLayout';
 import ThemeProvider from './components/ThemeProvider';
+import CurrencyProvider from "./components/CurrencyContext";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -38,7 +39,7 @@ function App() {
   useEffect(() => {
     const token = localStorage.getItem('access_token');
     const userData = localStorage.getItem('user_data');
-    
+
     if (token && userData) {
       try {
         setUser(JSON.parse(userData));
@@ -73,94 +74,96 @@ function App() {
 
   return (
     <ThemeProvider>
-      <div className="App">
-        <HashRouter>
-          <Routes>
-            <Route
-              path="/login"
-              element={
-                !user ? (
-                  <LoginForm onLogin={handleLogin} />
-                ) : (
-                  <Navigate to="/" replace />
-                )
-              }
-            />
-            <Route
-              path="/"
-              element={
-                user ? (
-                  <MainLayout user={user} onLogout={handleLogout}>
-                    <Dashboard user={user} />
-                  </MainLayout>
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/clients"
-              element={
-                user ? (
-                  <MainLayout user={user} onLogout={handleLogout}>
-                    <ClientsPage user={user} />
-                  </MainLayout>
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/invoices"
-              element={
-                user ? (
-                  <MainLayout user={user} onLogout={handleLogout}>
-                    <InvoicesPage user={user} />
-                  </MainLayout>
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/client-details"
-              element={
-                user ? (
-                  <MainLayout user={user} onLogout={handleLogout}>
-                    <ClientDetailsPage user={user} />
-                  </MainLayout>
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/clients/:clientId"
-              element={
-                user ? (
-                  <MainLayout user={user} onLogout={handleLogout}>
-                    <ClientDrillthrough user={user} />
-                  </MainLayout>
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                user ? (
-                  <MainLayout user={user} onLogout={handleLogout}>
-                    <SettingsPage user={user} />
-                  </MainLayout>
-                ) : (
-                  <Navigate to="/login" replace />
-                )
-              }
-            />
-          </Routes>
-        </HashRouter>
-      </div>
+      <CurrencyProvider>
+        <div className="App">
+          <HashRouter>
+            <Routes>
+              <Route
+                path="/login"
+                element={
+                  !user ? (
+                    <LoginForm onLogin={handleLogin} />
+                  ) : (
+                    <Navigate to="/" replace />
+                  )
+                }
+              />
+              <Route
+                path="/"
+                element={
+                  user ? (
+                    <MainLayout user={user} onLogout={handleLogout}>
+                      <Dashboard user={user} />
+                    </MainLayout>
+                  ) : (
+                    <Navigate to="/login" replace />
+                  )
+                }
+              />
+              <Route
+                path="/clients"
+                element={
+                  user ? (
+                    <MainLayout user={user} onLogout={handleLogout}>
+                      <ClientsPage user={user} />
+                    </MainLayout>
+                  ) : (
+                    <Navigate to="/login" replace />
+                  )
+                }
+              />
+              <Route
+                path="/invoices"
+                element={
+                  user ? (
+                    <MainLayout user={user} onLogout={handleLogout}>
+                      <InvoicesPage user={user} />
+                    </MainLayout>
+                  ) : (
+                    <Navigate to="/login" replace />
+                  )
+                }
+              />
+              <Route
+                path="/client-details"
+                element={
+                  user ? (
+                    <MainLayout user={user} onLogout={handleLogout}>
+                      <ClientDetailsPage user={user} />
+                    </MainLayout>
+                  ) : (
+                    <Navigate to="/login" replace />
+                  )
+                }
+              />
+              <Route
+                path="/clients/:clientId"
+                element={
+                  user ? (
+                    <MainLayout user={user} onLogout={handleLogout}>
+                      <ClientDrillthrough user={user} />
+                    </MainLayout>
+                  ) : (
+                    <Navigate to="/login" replace />
+                  )
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  user ? (
+                    <MainLayout user={user} onLogout={handleLogout}>
+                      <SettingsPage user={user} />
+                    </MainLayout>
+                  ) : (
+                    <Navigate to="/login" replace />
+                  )
+                }
+              />
+            </Routes>
+          </HashRouter>
+        </div>
+      </CurrencyProvider>
     </ThemeProvider>
   );
 }
