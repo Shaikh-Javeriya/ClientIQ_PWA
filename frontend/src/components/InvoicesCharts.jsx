@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { BarChart3, TrendingUp } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 import { format, subMonths, startOfMonth } from 'date-fns';
-import CurrencyProvider from "./components/CurrencyContext";
+import CurrencyProvider from "./CurrencyContext";
 
 ChartJS.register(
   CategoryScale,
