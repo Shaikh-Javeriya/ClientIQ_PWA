@@ -12,7 +12,7 @@ import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import ClientDrillthrough from './ClientDrillthrough';
 import { useToast } from './ui/use-toast';
-import { useCurrency } from "./components/CurrencyContext";
+import { useCurrency } from "./CurrencyContext";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
