@@ -20,7 +20,7 @@ import ClientsTable from './ClientsTable';
 import ClientsCharts from './ClientsCharts';
 import ClientFormModal from './ClientFormModal';
 import { useToast } from './ui/use-toast';
-import CurrencyProvider from "./CurrencyContext";
+import { useCurrency } from "./CurrencyContext";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
