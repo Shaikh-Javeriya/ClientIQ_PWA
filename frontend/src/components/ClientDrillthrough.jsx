@@ -23,7 +23,7 @@ import ProjectProfitabilityChart from './ProjectProfitabilityChart';
 import ClientInvoicesList from './ClientInvoicesList';
 import ProjectFormModal from './ProjectFormModal';
 import { useToast } from './ui/use-toast';
-import { useCurrency } from "./components/CurrencyContext";
+import { useCurrency } from "./CurrencyContext";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
