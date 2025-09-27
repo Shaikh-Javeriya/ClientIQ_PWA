@@ -1,7 +1,7 @@
 import React from 'react';
 import { DollarSign, TrendingUp, Percent, CreditCard, Users, MapPin } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
-import CurrencyProvider from "./components/CurrencyContext";
+import CurrencyProvider from "./CurrencyContext";
 
 const ClientProfileCard = ({ client, summary }) => {
   const { currency, locale } = useCurrency();
