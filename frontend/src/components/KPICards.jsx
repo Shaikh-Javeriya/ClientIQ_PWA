@@ -1,7 +1,7 @@
 import React from 'react';
 import { DollarSign, TrendingUp, Percent, Clock, CreditCard, Timer } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
-import CurrencyProvider from "./CurrencyContext";
+import { useCurrency } from "./CurrencyContext";
 
 const KPICards = ({ data }) => {
   const { currency, locale } = useCurrency();
