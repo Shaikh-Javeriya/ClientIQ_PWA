@@ -352,43 +352,21 @@ async def generate_sample_data(current_user: dict = Depends(get_current_user)):
 @api_router.get("/clients")
 async def get_clients(current_user: dict = Depends(get_current_user)):
     try:
-        #clients = await db.clients.find().to_list(length=None)
         clients = await db.clients.find({"user_id": current_user["id"]}).to_list(length=None)
         parsed_clients = []
         for client in clients:
-            # Remove MongoDB _id and parse dates
-            if '_id' in client:
-                del client['_id']
-            parsed_client = parse_from_mongo(client)
-            parsed_clients.append(parsed_client)
+            try:
+                if "_id" in client:
+                    del client["_id"]
+                parsed_client = parse_from_mongo(client)
+                parsed_clients.append(parsed_client)
+            except Exception as parse_err:
+                print(f"Error parsing client {client.get('id')}: {parse_err}")
+                continue
         return parsed_clients
     except Exception as e:
         print(f"Error getting clients: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch clients")
-
-@api_router.post("/clients")
-async def create_client(client_data: dict, current_user: dict = Depends(get_current_user)):
-    try:
-        # Create a new client with UUID
-        client = {
-            "id": str(uuid.uuid4()),
-            "user_id": current_user["id"],
-            "name": client_data.get("name", ""),
-            "tier": client_data.get("tier", ""),
-            "region": client_data.get("region", ""),
-            "contact_email": client_data.get("contact_email", ""),
-            "contact_phone": client_data.get("contact_phone", ""),
-            "hourly_rate": float(client_data.get("hourly_rate", 0)),
-            "created_at": datetime.now(timezone.utc).isoformat()
-        }
-        
-        client_dict = prepare_for_mongo(client.copy())
-        result = await db.clients.insert_one(client_dict)
-        # Return the original client data without MongoDB _id
-        return client
-    except Exception as e:
-        print(f"Error creating client: {e}")
-        raise HTTPException(status_code=500, detail="Failed to create client")
 
 @api_router.put("/clients/{client_id}")
 async def update_client(client_id: str, client_data: dict, current_user: dict = Depends(get_current_user)):
@@ -742,39 +720,55 @@ async def get_client_profitability(current_user: dict = Depends(get_current_user
     result = []
     
     for client in clients:
-        invoices = await db.invoices.find({"client_id": client["id"], "user_id": current_user["id"]}).to_list(length=None)
-        projects = await db.projects.find({"client_id": client["id"], "user_id": current_user["id"]}).to_list(length=None)
+        try:
+            invoices = await db.invoices.find(
+                {"client_id": client.get("id"), "user_id": current_user["id"]}
+            ).to_list(length=None)
+            projects = await db.projects.find(
+                {"client_id": client.get("id"), "user_id": current_user["id"]}
+            ).to_list(length=None)
+            
+            revenue = sum(float(inv.get("amount", 0) or 0) for inv in invoices if inv.get("status") == "paid")
+            hours_worked = sum(float(proj.get("hours_worked", 0) or 0) for proj in projects)
+            outstanding_ar = sum(float(inv.get("amount", 0) or 0) for inv in invoices if inv.get("status") in ["unpaid", "overdue"])
+            
+            # Calculate profit safely
+            profit = revenue * 0.75  # 25% overhead assumption
+            margin_percent = (profit / revenue * 100) if revenue > 0 else 0
+            profit_per_hour = (profit / hours_worked) if hours_worked > 0 else 0
+            
+            # Safe last invoice date
+            last_invoice_date = None
+            if invoices:
+                valid_dates = [inv.get("invoice_date") for inv in invoices if inv.get("invoice_date")]
+                if valid_dates:
+                    try:
+                        last_invoice_date = max(
+                            datetime.fromisoformat(d.replace("Z", "+00:00"))
+                            for d in valid_dates
+                        )
+                    except Exception as e:
+                        print(f"Bad invoice_date for client {client.get('id')}: {e}")
+                        last_invoice_date = None
+            
+            result.append(ClientProfitability(
+                client_id=client.get("id"),
+                client_name=client.get("name"),
+                tier=client.get("tier", ""),
+                region=client.get("region", ""),
+                revenue=revenue,
+                hours_worked=hours_worked,
+                profit=profit,
+                margin_percent=margin_percent,
+                profit_per_hour=profit_per_hour,
+                outstanding_ar=outstanding_ar,
+                last_invoice_date=last_invoice_date
+            ))
         
-        revenue = sum(inv["amount"] for inv in invoices if inv["status"] == "paid")
-        hours_worked = sum(proj["hours_worked"] for proj in projects)
-        outstanding_ar = sum(inv["amount"] for inv in invoices if inv["status"] in ["unpaid", "overdue"])
-        
-        # Calculate profit (revenue - estimated costs)
-        profit = revenue * 0.75  # Assuming 25% overhead
-        margin_percent = (profit / revenue * 100) if revenue > 0 else 0
-        profit_per_hour = profit / hours_worked if hours_worked > 0 else 0
-        
-        # Get last invoice date
-        last_invoice_date = None
-        if invoices:
-            last_invoice = max(invoices, key=lambda x: x["invoice_date"])
-            last_invoice_date = datetime.fromisoformat(last_invoice["invoice_date"].replace('Z', '+00:00'))
-        
-        result.append(ClientProfitability(
-            client_id=client["id"],
-            client_name=client["name"],
-            tier=client["tier"],
-            region=client["region"],
-            revenue=revenue,
-            hours_worked=hours_worked,
-            profit=profit,
-            margin_percent=margin_percent,
-            profit_per_hour=profit_per_hour,
-            outstanding_ar=outstanding_ar,
-            last_invoice_date=last_invoice_date
-        ))
+        except Exception as e:
+            print(f"Error processing client {client.get('id')}: {e}")
+            continue  # skip bad client, don’t crash everything
     
-    # Sort by revenue descending
     result.sort(key=lambda x: x.revenue, reverse=True)
     return result
 
