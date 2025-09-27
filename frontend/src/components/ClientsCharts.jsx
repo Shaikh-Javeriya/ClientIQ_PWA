@@ -13,7 +13,7 @@ import { Bar, Scatter } from 'react-chartjs-2';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { BarChart3, Activity } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
-import CurrencyProvider from "./components/CurrencyContext";
+import CurrencyProvider from "./CurrencyContext";
 
 ChartJS.register(
   CategoryScale,
