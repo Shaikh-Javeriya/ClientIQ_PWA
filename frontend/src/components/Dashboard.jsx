@@ -18,7 +18,7 @@ import ClientRevenueChart from './ClientRevenueChart';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { useToast } from './ui/use-toast';
-import CurrencyProvider from "./CurrencyContext";
+import { useCurrency } from "./CurrencyContext";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
