@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { useCurrency } from "./components/CurrencyContext";
+import { useCurrency } from "./CurrencyContext";
 
 const ClientInvoicesList = ({ invoices, projects, onMarkPaid, onSendReminder }) => {
   const [searchTerm, setSearchTerm] = useState('');
