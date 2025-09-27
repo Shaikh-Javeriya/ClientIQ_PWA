@@ -2,7 +2,7 @@ import React from 'react';
 import { Eye, Check, Mail, Edit, Trash2, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from './ui/button';
-import CurrencyProvider from "./components/CurrencyContext";
+import CurrencyProvider from "./CurrencyContext";
 
 const InvoicesTable = ({ invoices, onEdit, onDelete, onMarkPaid, onSendReminder }) => {
   const { currency, locale } = useCurrency();
