@@ -282,9 +282,7 @@ Your Account Team`;
         }
         
         if (importedCount > 0) {
-          //await fetchData();
-          await fetchInvoices();  // refresh invoices
-          await fetchClients(); 
+          await fetchData();
           toast({
             title: "Import Successful",
             description: `Imported ${importedCount} invoices successfully${errorCount > 0 ? `. ${errorCount} rows had errors.` : '.'}`,
