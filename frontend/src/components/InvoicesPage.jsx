@@ -21,7 +21,7 @@ import InvoicesTable from './InvoicesTable';
 import InvoicesCharts from './InvoicesCharts';
 import InvoiceFormModal from './InvoiceFormModal';
 import { useToast } from './ui/use-toast';
-import CurrencyProvider from "./components/CurrencyContext";
+import CurrencyProvider from "./CurrencyContext";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
