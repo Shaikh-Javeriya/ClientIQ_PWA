@@ -17,6 +17,20 @@ export const CurrencyProvider = ({ children }) => {
     }).format(value || 0);
   };
 
+  useEffect(() => {
+        const savedCurrency = localStorage.getItem("currency");
+        const savedLocale = localStorage.getItem("locale");
+        if (savedCurrency) setCurrency(savedCurrency);
+        if (savedLocale) setLocale(savedLocale);
+    }, []);
+  
+  const updateSettings = (newCurrency, newLocale) => {
+        setCurrency(newCurrency);
+        setLocale(newLocale);
+        localStorage.setItem("currency", newCurrency);
+        localStorage.setItem("locale", newLocale);
+  };
+
   return (
     <CurrencyContext.Provider
       value={{
@@ -24,7 +38,8 @@ export const CurrencyProvider = ({ children }) => {
         setCurrency,
         locale,
         setLocale,
-        formatCurrency, // ✅ expose to all components
+        formatCurrency,
+        updateSettings,
       }}
     >
       {children}
@@ -33,3 +48,4 @@ export const CurrencyProvider = ({ children }) => {
 };
 
 export const useCurrency = () => useContext(CurrencyContext);
+
