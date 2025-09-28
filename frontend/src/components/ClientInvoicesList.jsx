@@ -12,9 +12,14 @@ const ClientInvoicesList = ({ invoices, projects, onMarkPaid, onSendReminder }) 
   const [projectFilter, setProjectFilter] = useState('all');
 
   const { currency, locale } = useCurrency();
-  const formatCurrency = (value) =>
-    new Intl.NumberFormat(locale, { style: "currency", currency }).format(value);
-
+  const formatCurrency = (value, options = {}) => {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: options.minFractionDigits ?? 0,
+      notation: options.notation || "standard",
+    }).format(value || 0);
+  };
   const getStatusColor = (status, daysOverdue = 0) => {
     switch (status) {
       case 'paid':
