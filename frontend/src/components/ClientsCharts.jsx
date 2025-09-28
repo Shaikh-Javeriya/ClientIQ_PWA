@@ -29,13 +29,14 @@ const ClientsCharts = ({ clients }) => {
   const { getThemeColors } = useTheme();
   const colors = getThemeColors();
   const { currency, locale } = useCurrency();
-  const formatCurrency = (value, options = {}) =>
-    new Intl.NumberFormat(locale, {
+  const formatCurrency = (value, options = {}) => {
+    return new Intl.NumberFormat(locale, {
       style: "currency",
       currency,
       minimumFractionDigits: options.minFractionDigits ?? 0,
-      notation: options.notation || "standard", // default is normal numbers
+      notation: options.notation || "standard",
     }).format(value || 0);
+  };
 
   if (!clients || clients.length === 0) {
     return null;
