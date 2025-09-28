@@ -28,16 +28,8 @@ ChartJS.register(
 const ClientsCharts = ({ clients }) => {
   const { getThemeColors } = useTheme();
   const colors = getThemeColors();
-  const { currency, locale } = useCurrency();
-  const formatCurrency = (value, options = {}) => {
-    return new Intl.NumberFormat(locale, {
-      style: "currency",
-      currency,
-      minimumFractionDigits: options.minFractionDigits ?? 0,
-      notation: options.notation || "standard",
-    }).format(value || 0);
-  };
-
+  const { currency, locale, formatCurrency } = useCurrency();
+  
   if (!clients || clients.length === 0) {
     return null;
   }
