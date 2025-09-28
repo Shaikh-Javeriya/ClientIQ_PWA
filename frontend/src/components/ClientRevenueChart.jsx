@@ -25,14 +25,14 @@ const ClientRevenueChart = ({ data }) => {
   const { getThemeColors } = useTheme();
   const colors = getThemeColors();
   const { currency, locale } = useCurrency();
-  const formatCurrency = (value, options = {}) =>
-    new Intl.NumberFormat(locale, {
+  const formatCurrency = (value, options = {}) => {
+    return new Intl.NumberFormat(locale, {
       style: "currency",
       currency,
       minimumFractionDigits: options.minFractionDigits ?? 0,
-      notation: options.notation || "standard", // default is normal numbers
+      notation: options.notation || "standard",
     }).format(value || 0);
-
+  };
   if (!data || data.length === 0) {
     return (
       <div className="h-64 flex items-center justify-center text-gray-500">
