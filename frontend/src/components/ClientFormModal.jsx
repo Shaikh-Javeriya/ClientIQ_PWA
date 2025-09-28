@@ -24,9 +24,14 @@ const ClientFormModal = ({ client, isOpen, onClose, onSave }) => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { currency, locale } = useCurrency();
-  const formatCurrency = (value) =>
-    new Intl.NumberFormat(locale, { style: "currency", currency }).format(value);
-
+  const formatCurrency = (value, options = {}) => {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: options.minFractionDigits ?? 0,
+      notation: options.notation || "standard",
+    }).format(value || 0);
+  };
   useEffect(() => {
     if (client) {
       setFormData({
