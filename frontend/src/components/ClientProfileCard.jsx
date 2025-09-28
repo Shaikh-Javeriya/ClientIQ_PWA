@@ -4,15 +4,8 @@ import { Card, CardContent } from './ui/card';
 import { useCurrency } from "./CurrencyContext";
 
 const ClientProfileCard = ({ client, summary }) => {
-  const { currency, locale } = useCurrency();
-  const formatCurrency = (value, options = {}) => {
-    return new Intl.NumberFormat(locale, {
-      style: "currency",
-      currency,
-      minimumFractionDigits: options.minFractionDigits ?? 0,
-      notation: options.notation || "standard",
-    }).format(value || 0);
-  };
+  const { currency, locale, formatCurrency } = useCurrency();
+
   const getMarginColor = (margin) => {
     if (margin >= 30) return 'text-green-600 bg-green-50';
     if (margin >= 15) return 'text-yellow-600 bg-yellow-50';
