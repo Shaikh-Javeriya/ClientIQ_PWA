@@ -25,12 +25,12 @@ const InvoiceFormModal = ({ invoice, clients, isOpen, onClose, onSave }) => {
   const { toast } = useToast();
   const { currency, locale } = useCurrency();
   const formatCurrency = (value, options = {}) => {
-    new Intl.NumberFormat(locale, {
+    return new Intl.NumberFormat(locale, {
       style: "currency",
       currency,
       minimumFractionDigits: options.minFractionDigits ?? 0,
-      notation: options.notation || "standard", // default is normal numbers
-    }).format(value || 0)
+      notation: options.notation || "standard",
+    }).format(value || 0);
   };
 
   useEffect(() => {
@@ -163,7 +163,7 @@ const InvoiceFormModal = ({ invoice, clients, isOpen, onClose, onSave }) => {
               </div>
 
               <div>
-                <Label htmlFor="amount">Amount ($) *</Label>
+                <Label htmlFor="amount">Amount ({currency}) *</Label>
                 <Input
                   id="amount"
                   type="number"
