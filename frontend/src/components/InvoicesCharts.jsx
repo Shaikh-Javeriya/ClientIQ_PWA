@@ -33,12 +33,12 @@ const InvoicesCharts = ({ invoices, arAging }) => {
   const colors = getThemeColors();
   const { currency, locale } = useCurrency();
   const formatCurrency = (value, options = {}) => {
-    new Intl.NumberFormat(locale, {
+    return new Intl.NumberFormat(locale, {
       style: "currency",
       currency,
       minimumFractionDigits: options.minFractionDigits ?? 0,
-      notation: options.notation || "standard", // default is normal numbers
-    }).format(value || 0)
+      notation: options.notation || "standard",
+    }).format(value || 0);
   };
 
   if (!invoices || invoices.length === 0) {
