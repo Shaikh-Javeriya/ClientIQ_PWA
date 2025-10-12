@@ -256,7 +256,7 @@ const RFMAnalysisPage = () => {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-96">
-                <div className="animate-spin rounded-full h-20 w-20 border-b-4 border-blue-600"></div>
+                <div className="animate-spin rounded-full h-32 w-32 border-b-4 border-blue-600"></div>
             </div>
         );
     }
@@ -378,7 +378,6 @@ const RFMAnalysisPage = () => {
                                 >
                                     <option value="all">All Segments</option>
                                     <option value="Champion">Champions</option>
-                                    <option value="Champion">Champion</option>
                                     <option value="Loyal">Loyal</option>
                                     <option value="Potential">Potential</option>
                                     <option value="At Risk">At Risk</option>
@@ -399,22 +398,49 @@ const RFMAnalysisPage = () => {
                                 <text x={12} y={scatterDims.height / 2} transform={`rotate(-90 12 ${scatterDims.height / 2})`} textAnchor="middle" className="text-xs" fill="#6b7280">Recency (better ↑)</text>
 
                                 {/* bubbles */}
+                                <defs>
+                                    {["Champion", "Loyal", "Potential", "At Risk", "Lost", "Other"].map(seg => (
+                                        <radialGradient key={seg} id={`grad-${seg}`} cx="30%" cy="30%" r="70%">
+                                            <stop offset="0%" stopColor="white" stopOpacity="0.9" />
+                                            <stop offset="50%" stopColor={
+                                                seg === "Champion" ? "#34d399" :
+                                                    seg === "Loyal" ? "#3b82f6" :
+                                                        seg === "Potential" ? "#f59e0b" :
+                                                            seg === "At Risk" ? "#ef4444" :
+                                                                seg === "Lost" ? "#6b7280" :
+                                                                    "#a855f7"
+                                            } stopOpacity="0.9" />
+                                            <stop offset="100%" stopColor="rgba(255,255,255,0.2)" />
+                                        </radialGradient>
+                                    ))}
+                                </defs>
+
                                 {scatterData.map(d => {
                                     const cx = xScale(d.frequency);
                                     const cy = yScale(d.recencyDays);
                                     const r = rScale(d.monetary);
-                                    const color = d.segment === "Champion" ? "#065f46" :
-                                        d.segment === "Loyal" ? "#1e40af" :
-                                            d.segment === "Potential" ? "#b45309" :
-                                                d.segment === "At Risk" ? "#b91c1c" :
-                                                    "#374151";
+                                    const seg = d.segment || "Other";
+
                                     return (
-                                        <g key={d.id}>
-                                            <circle cx={cx} cy={cy} r={r} fill={color} fillOpacity="0.12" stroke={color} strokeOpacity="0.9" />
-                                            <title>{`${d.name} — R:${d.R} F:${d.F} M:${d.M} — ${formatCurrency(d.monetary)} — last ${d.recencyDays}d`}</title>
+                                        <g key={d.id} className="transition-transform duration-300 hover:scale-110">
+                                            <circle
+                                                cx={cx}
+                                                cy={cy}
+                                                r={r}
+                                                fill={`url(#grad-${seg})`}
+                                                stroke="rgba(255,255,255,0.6)"
+                                                strokeWidth="0.8"
+                                                filter="url(#shadow)"
+                                            />
+                                            <title>{`${d.name} — ${d.segment} (${formatCurrency(d.monetary)})`}</title>
                                         </g>
                                     );
                                 })}
+
+                                <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+                                    <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="rgba(0,0,0,0.15)" />
+                                </filter>
+
                             </svg>
                         </div>
 
