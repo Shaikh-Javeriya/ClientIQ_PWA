@@ -805,6 +805,111 @@ async def get_revenue_by_month(current_user: dict = Depends(get_current_user)):
     
     return result
 
+@api_router.get("/dashboard/rfm")
+async def get_rfm_analysis(current_user: dict = Depends(get_current_user)):
+    """
+    Compute Recency, Frequency, and Monetary scores per client for the authenticated user.
+    Returns a list of dicts with R, F, M, RFM score and segment.
+    """
+    try:
+        clients = await db.clients.find({"user_id": current_user["id"]}).to_list(length=None)
+        invoices = await db.invoices.find({"user_id": current_user["id"]}).to_list(length=None)
+        now = datetime.now(timezone.utc)
+
+        # Group invoices by client_id
+        invoices_by_client = {}
+        for inv in invoices:
+            cid = inv.get("client_id")
+            if not cid:
+                continue
+            invoices_by_client.setdefault(cid, []).append(inv)
+
+        rfm_data = []
+        for client in clients:
+            cid = client.get("id")
+            invs = invoices_by_client.get(cid, [])
+            if not invs:
+                continue
+
+            # --- Recency (days since last invoice) ---
+            last_invoice_date = None
+            for inv in invs:
+                d = inv.get("invoice_date") or inv.get("paid_date")
+                if not d:
+                    continue
+                try:
+                    if isinstance(d, str):
+                        d = datetime.fromisoformat(d.replace("Z", "+00:00"))
+                except Exception:
+                    continue
+                if not last_invoice_date or d > last_invoice_date:
+                    last_invoice_date = d
+            recency_days = (now - last_invoice_date).days if last_invoice_date else 9999
+
+            # --- Frequency (number of invoices) ---
+            frequency = len(invs)
+
+            # --- Monetary (total paid amount) ---
+            monetary = sum(float(inv.get("amount", 0) or 0) for inv in invs)
+
+            rfm_data.append({
+                "client_id": cid,
+                "client_name": client.get("name"),
+                "recency_days": recency_days,
+                "frequency": frequency,
+                "monetary": monetary,
+                "last_invoice_date": last_invoice_date
+            })
+
+        # Compute quantiles for scoring
+        def quintile(sorted_vals, v, invert=False):
+            if not sorted_vals:
+                return 1
+            n = len(sorted_vals)
+            pos = next((i for i, x in enumerate(sorted_vals) if x >= v), n - 1)
+            score = int((pos / max(n - 1, 1)) * 5) + 1
+            score = min(max(score, 1), 5)
+            if invert:
+                score = 6 - score
+            return score
+
+        rec_vals = sorted([x["recency_days"] for x in rfm_data])
+        freq_vals = sorted([x["frequency"] for x in rfm_data])
+        mon_vals = sorted([x["monetary"] for x in rfm_data])
+
+        for row in rfm_data:
+            R = quintile(rec_vals, row["recency_days"], invert=True)
+            F = quintile(freq_vals, row["frequency"])
+            M = quintile(mon_vals, row["monetary"])
+            row.update({
+                "R": R,
+                "F": F,
+                "M": M,
+                "rfm_score": R + F + M
+            })
+            # Segment logic
+            if R >= 4 and F >= 4 and M >= 4:
+                seg = "Champion"
+            elif F >= 4 and M >= 4:
+                seg = "Loyal"
+            elif R >= 4 and F >= 2:
+                seg = "Potential"
+            elif R <= 2 and (F >= 3 or M >= 3):
+                seg = "At Risk"
+            elif R <= 2 and F <= 2 and M <= 2:
+                seg = "Lost"
+            else:
+                seg = "Other"
+            row["segment"] = seg
+
+        # Sort by overall score desc
+        rfm_data.sort(key=lambda x: (x["rfm_score"], x["monetary"]), reverse=True)
+        return rfm_data
+
+    except Exception as e:
+        print(f"Error computing RFM: {e}")
+        raise HTTPException(status_code=500, detail="Failed to compute RFM analysis")
+
 # Include the router in the main app
 app.include_router(api_router)
 
