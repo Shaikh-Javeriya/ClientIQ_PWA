@@ -134,11 +134,15 @@ const RFMAnalysisPage = () => {
     const { formatCurrency } = useCurrency();
     const navigate = useNavigate();
 
+
     const fetchAll = async () => {
         try {
             setLoading(true);
             // Fetch precomputed RFM data from backend
-            const rfmResp = await axios.get(`${API}/dashboard/rfm`);
+            const token = localStorage.getItem("token");
+            const rfmResp = await axios.get(`${API}/dashboard/rfm`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
             setRfmRows(rfmResp.data || []);
         } catch (err) {
             console.error("RFM fetch error:", err);
