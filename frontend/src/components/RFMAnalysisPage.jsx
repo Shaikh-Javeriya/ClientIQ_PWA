@@ -399,20 +399,27 @@ const RFMAnalysisPage = () => {
 
                                 {/* bubbles */}
                                 <defs>
-                                    {["Champion", "Loyal", "Potential", "At Risk", "Lost", "Other"].map(seg => (
-                                        <radialGradient key={seg} id={`grad-${seg}`} cx="30%" cy="30%" r="70%">
-                                            <stop offset="0%" stopColor="white" stopOpacity="0.9" />
-                                            <stop offset="50%" stopColor={
-                                                seg === "Champion" ? "#34d399" :
-                                                    seg === "Loyal" ? "#3b82f6" :
-                                                        seg === "Potential" ? "#f59e0b" :
-                                                            seg === "At Risk" ? "#ef4444" :
-                                                                seg === "Lost" ? "#6b7280" :
-                                                                    "#a855f7"
-                                            } stopOpacity="0.9" />
-                                            <stop offset="100%" stopColor="rgba(255,255,255,0.2)" />
-                                        </radialGradient>
-                                    ))}
+                                    {["Champion", "Loyal", "Potential", "At Risk", "Lost", "Other"].map(seg => {
+                                        const safeId = seg.replace(/\s+/g, "-"); // replace spaces with dash
+                                        return (
+                                            <radialGradient key={seg} id={`grad-${safeId}`} cx="30%" cy="30%" r="70%">
+                                                <stop offset="0%" stopColor="white" stopOpacity="0.9" />
+                                                <stop
+                                                    offset="60%"
+                                                    stopColor={
+                                                        seg === "Champion" ? "#34d399" :
+                                                            seg === "Loyal" ? "#3b82f6" :
+                                                                seg === "Potential" ? "#f59e0b" :
+                                                                    seg === "At Risk" ? "#ef4444" :
+                                                                        seg === "Lost" ? "#6b7280" :
+                                                                            "#a855f7"
+                                                    }
+                                                    stopOpacity="0.9"
+                                                />
+                                                <stop offset="100%" stopColor="rgba(255,255,255,0.15)" />
+                                            </radialGradient>
+                                        );
+                                    })}
                                 </defs>
 
                                 {scatterData.map(d => {
@@ -427,12 +434,16 @@ const RFMAnalysisPage = () => {
                                                 cx={cx}
                                                 cy={cy}
                                                 r={r}
-                                                fill={`url(#grad-${seg})`}
+                                                fill={`url(#grad-${(d.segment || "Other").replace(/\s+/g, "-")})`}
                                                 stroke="rgba(255,255,255,0.6)"
                                                 strokeWidth="0.8"
                                                 filter="url(#shadow)"
-                                            />
-                                            <title>{`${d.name} — ${d.segment} (${formatCurrency(d.monetary)})`}</title>
+                                                className="transition-transform duration-300 hover:scale-110 cursor-pointer"
+                                            >
+                                                <title>
+                                                    {`${d.name} — R:${d.R}  F:${d.F}  M:${d.M}  (${d.segment}) • ${formatCurrency(d.monetary)}`}
+                                                </title>
+                                            </circle>
                                         </g>
                                     );
                                 })}
