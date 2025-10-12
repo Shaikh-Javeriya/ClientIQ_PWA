@@ -176,6 +176,12 @@ const RFMAnalysisPage = () => {
         // eslint-disable-next-line
     }, []);
 
+    useEffect(() => {
+        console.log("🔍 API base:", API);
+        console.log("🔍 Token found:", !!localStorage.getItem("token"));
+        console.log("🔍 rfmRows state:", rfmRows);
+    }, [rfmRows]);
+
     //useEffect(() => {
     //  if (!clients.length) {
     //      setRfmRows([]);
@@ -251,6 +257,15 @@ const RFMAnalysisPage = () => {
         return (
             <div className="flex items-center justify-center min-h-96">
                 <div className="animate-spin rounded-full h-20 w-20 border-b-4 border-blue-600"></div>
+            </div>
+        );
+    }
+
+    if (!rfmRows || rfmRows.length === 0) {
+        return (
+            <div className="text-center py-20 text-gray-600">
+                ⚠️ No RFM data available.<br />
+                Check your backend response or authentication.
             </div>
         );
     }
