@@ -1,13 +1,14 @@
 import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { 
-  BarChart3, 
-  Users, 
-  DollarSign, 
+import {
+  BarChart3,
+  Users,
+  DollarSign,
   Settings,
   User,
   LogOut,
-  RefreshCw
+  RefreshCw,
+  Database
 } from 'lucide-react';
 import { Button } from './ui/button';
 
@@ -19,6 +20,7 @@ const MainLayout = ({ user, onLogout, children }) => {
     { name: 'Clients', path: '/clients', icon: Users },
     { name: 'Client Details', path: '/client-details', icon: User },
     { name: 'Invoices', path: '/invoices', icon: DollarSign },
+    { name: 'RFM Insights', path: '/rfm', icon: Database },
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
 
@@ -53,11 +55,10 @@ const MainLayout = ({ user, onLogout, children }) => {
                     <Link
                       key={item.name}
                       to={item.path}
-                      className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
-                        isActive(item.path)
-                          ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                      }`}
+                      className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${isActive(item.path)
+                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                        }`}
                     >
                       <Icon className="w-4 h-4" />
                       <span>{item.name}</span>
@@ -68,24 +69,27 @@ const MainLayout = ({ user, onLogout, children }) => {
             </div>
 
             <div className="flex items-center space-x-4">
+              {/* Icon-only refresh and logout buttons to free space for an extra nav item */}
               <Button
                 onClick={() => window.location.reload()}
                 variant="outline"
                 size="sm"
-                className="flex items-center space-x-2"
+                className="p-2"
+                title="Refresh"
+                aria-label="Refresh"
               >
                 <RefreshCw className="w-4 h-4" />
-                <span className="hidden sm:inline">Refresh</span>
               </Button>
 
               <Button
                 onClick={onLogout}
                 variant="outline"
                 size="sm"
-                className="flex items-center space-x-2 text-red-600 border-red-200 hover:bg-red-50"
+                className="p-2 text-red-600 border-red-200 hover:bg-red-50"
+                title="Logout"
+                aria-label="Logout"
               >
                 <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           </div>
