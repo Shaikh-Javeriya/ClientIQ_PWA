@@ -13,7 +13,8 @@ import ClientDetailsPage from './components/ClientDetailsPage';
 import SettingsPage from './components/SettingsPage';
 import MainLayout from './components/MainLayout';
 import ThemeProvider from './components/ThemeProvider';
-import {CurrencyProvider} from "./components/CurrencyContext";
+import RFMAnalysisPage from './components/RFMAnalysisPage';
+import { CurrencyProvider } from "./components/CurrencyContext";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -142,6 +143,18 @@ function App() {
                   user ? (
                     <MainLayout user={user} onLogout={handleLogout}>
                       <ClientDrillthrough user={user} />
+                    </MainLayout>
+                  ) : (
+                    <Navigate to="/login" replace />
+                  )
+                }
+              />
+              <Route
+                path="/rfm"
+                element={
+                  user ? (
+                    <MainLayout user={user} onLogout={handleLogout}>
+                      <RFMAnalysisPage user={user} />
                     </MainLayout>
                   ) : (
                     <Navigate to="/login" replace />
