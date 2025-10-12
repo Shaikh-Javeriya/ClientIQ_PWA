@@ -143,7 +143,22 @@ const RFMAnalysisPage = () => {
             const rfmResp = await axios.get(`${API}/dashboard/rfm`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            setRfmRows(rfmResp.data || []);
+            // Map backend snake_case fields to frontend camelCase keys
+            const mappedData = (rfmResp.data || []).map(item => ({
+                id: item.client_id,
+                name: item.client_name,
+                recencyDays: item.recency_days,
+                frequency: item.frequency,
+                monetary: item.monetary,
+                R: item.R,
+                F: item.F,
+                M: item.M,
+                rfmScore: item.rfm_score,
+                segment: item.segment,
+                lastDate: item.last_invoice_date
+            }));
+            setRfmRows(mappedData);
+            console.log("Mapped RFM data:", mappedData);
         } catch (err) {
             console.error("RFM fetch error:", err);
             toast({
