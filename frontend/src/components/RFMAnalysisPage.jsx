@@ -398,9 +398,10 @@ const RFMAnalysisPage = () => {
                                 <text x={12} y={scatterDims.height / 2} transform={`rotate(-90 12 ${scatterDims.height / 2})`} textAnchor="middle" className="text-xs" fill="#6b7280">Recency (better ↑)</text>
 
                                 {/* bubbles */}
+                                {/* Gradients */}
                                 <defs>
                                     {["Champion", "Loyal", "Potential", "At Risk", "Lost", "Other"].map(seg => {
-                                        const safeId = seg.replace(/\s+/g, "-"); // replace spaces with dash
+                                        const safeId = seg.replace(/\s+/g, "-");
                                         return (
                                             <radialGradient key={seg} id={`grad-${safeId}`} cx="30%" cy="30%" r="70%">
                                                 <stop offset="0%" stopColor="white" stopOpacity="0.9" />
@@ -422,35 +423,63 @@ const RFMAnalysisPage = () => {
                                     })}
                                 </defs>
 
+                                {/* Drop shadow filter */}
+                                <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+                                    <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="rgba(0,0,0,0.15)" />
+                                </filter>
+
+                                {/* Custom tooltip container */}
+                                <foreignObject x="0" y="0" width="100%" height="100%">
+                                    <div
+                                        id="rfm-tooltip"
+                                        className="absolute hidden pointer-events-none text-xs bg-white/80 backdrop-blur-md px-2 py-1 rounded-lg shadow-md border border-white/50"
+                                    ></div>
+                                </foreignObject>
+
+                                {/* Circles */}
                                 {scatterData.map(d => {
                                     const cx = xScale(d.frequency);
                                     const cy = yScale(d.recencyDays);
                                     const r = rScale(d.monetary);
                                     const seg = d.segment || "Other";
+                                    const fillUrl = `url(#grad-${seg.replace(/\s+/g, "-")})`;
 
                                     return (
-                                        <g key={d.id} className="transition-transform duration-300 hover:scale-110">
-                                            <circle
-                                                cx={cx}
-                                                cy={cy}
-                                                r={r}
-                                                fill={`url(#grad-${(d.segment || "Other").replace(/\s+/g, "-")})`}
-                                                stroke="rgba(255,255,255,0.6)"
-                                                strokeWidth="0.8"
-                                                filter="url(#shadow)"
-                                                className="transition-transform duration-300 hover:scale-110 cursor-pointer"
-                                            >
-                                                <title>
-                                                    {`${d.name} — R:${d.R}  F:${d.F}  M:${d.M}  (${d.segment}) • ${formatCurrency(d.monetary)}`}
-                                                </title>
-                                            </circle>
-                                        </g>
+                                        <circle
+                                            key={d.id}
+                                            cx={cx}
+                                            cy={cy}
+                                            r={r}
+                                            fill={fillUrl}
+                                            stroke="rgba(255,255,255,0.6)"
+                                            strokeWidth="0.8"
+                                            filter="url(#shadow)"
+                                            className="cursor-pointer transition-all duration-300"
+                                            onMouseEnter={(e) => {
+                                                const tooltip = document.getElementById("rfm-tooltip");
+                                                tooltip.innerHTML = `
+                                                    <b>${d.name}</b><br/>
+                                                    Segment: ${d.segment}<br/>
+                                                    R: ${d.R} | F: ${d.F} | M: ${d.M}<br/>
+                                                    Revenue: ${formatCurrency(d.monetary)}
+                                                `;
+                                                tooltip.style.left = `${e.clientX + 15}px`;
+                                                tooltip.style.top = `${e.clientY - 10}px`;
+                                                tooltip.classList.remove("hidden");
+                                            }}
+                                            onMouseMove={(e) => {
+                                                const tooltip = document.getElementById("rfm-tooltip");
+                                                tooltip.style.left = `${e.clientX + 15}px`;
+                                                tooltip.style.top = `${e.clientY - 10}px`;
+                                            }}
+                                            onMouseLeave={() => {
+                                                const tooltip = document.getElementById("rfm-tooltip");
+                                                tooltip.classList.add("hidden");
+                                            }}
+                                        />
                                     );
                                 })}
 
-                                <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-                                    <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="rgba(0,0,0,0.15)" />
-                                </filter>
 
                             </svg>
                         </div>
