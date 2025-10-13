@@ -265,7 +265,8 @@ Your Account Team`;
           return;
         }
 
-        // Expected headers: name, tier, region, contact_email, contact_phone, hourly_rate
+        const token = localStorage.getItem("token");
+        const user = JSON.parse(localStorage.getItem("user"));
         let importedCount = 0;
         let errorCount = 0;
 
@@ -285,11 +286,14 @@ Your Account Team`;
             region: values[2] || 'North America',
             contact_email: values[3] || '',
             contact_phone: values[4] || '',
-            hourly_rate: parseFloat(values[5]) || 100
+            hourly_rate: parseFloat(values[5]) || 100,
+            user_id: user?.id || null,  // ✅ Always attach correct user_id
           };
 
           try {
-            await axios.post(`${API}/clients`, clientData);
+            await axios.post(`${API}/clients`, clientData, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
             importedCount++;
           } catch (error) {
             console.error('Error importing client:', error);
@@ -297,21 +301,20 @@ Your Account Team`;
           }
         }
 
-        if (importedCount > 0) {
-          await fetchClients();
-          toast({
-            title: "Import Successful",
-            description: `Imported ${importedCount} clients successfully${errorCount > 0 ? `. ${errorCount} rows had errors.` : '.'}`,
-          });
-        } else {
-          toast({
-            title: "Import Failed",
-            description: "No clients could be imported. Please check your CSV format.",
-            variant: "destructive",
-          });
-        }
+        // ✅ Wait for backend to finish all inserts before refreshing
+        await fetchClients();
+
+        toast({
+          title: importedCount > 0 ? "Import Successful" : "Import Failed",
+          description:
+            importedCount > 0
+              ? `Imported ${importedCount} clients successfully${errorCount > 0 ? `. ${errorCount} rows had errors.` : "."
+              }`
+              : "No clients could be imported. Please check your CSV format.",
+          variant: importedCount > 0 ? "default" : "destructive",
+        });
       } catch (error) {
-        console.error('Error parsing CSV:', error);
+        console.error("Error parsing CSV:", error);
         toast({
           title: "Import Error",
           description: "Failed to parse CSV file. Please check the format.",
@@ -321,8 +324,9 @@ Your Account Team`;
     };
 
     reader.readAsText(file);
-    event.target.value = ''; // Reset file input
+    event.target.value = ""; // Reset file input
   };
+
 
   const getUniqueValues = (field) => {
     const values = clients.map(client => client[field]).filter(Boolean);

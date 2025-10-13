@@ -234,85 +234,79 @@ Your Account Team`;
           return;
         }
 
+        const token = localStorage.getItem("token");
+        const user = JSON.parse(localStorage.getItem("user"));
         let importedCount = 0;
         let errorCount = 0;
+
+        // ✅ Always refresh clients first (to ensure mapping is up-to-date)
+        await fetchClients();
 
         for (let i = 1; i < lines.length; i++) {
           const line = lines[i].trim();
           if (!line) continue;
 
           const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
-          if (values.length < 6) { // expect 6 columns
+          if (values.length < 6) {
             errorCount++;
             continue;
           }
 
-          // Column 0 can be Client ID or Client Name
           let clientId = values[0].trim();
+          let client;
 
-          // If it's a UUID (contains "-"), assume it's an ID
+          // Handle UUID or name-based mapping
           if (clientId.includes("-")) {
-            const client = clients.find(c => c.id === clientId);
-            if (!client) {
-              console.error(`No matching client ID found for row:`, values);
-              errorCount++;
-              continue;
-            }
+            client = clients.find(c => c.id === clientId);
           } else {
-            // Otherwise match by exact name
-            const clientName = clientId.toLowerCase();
-            const client = clients.find(c => (c.name || "").toLowerCase() === clientName);
-            clientId = client ? client.id : null;
+            client = clients.find(
+              c => (c.name || "").toLowerCase() === clientId.toLowerCase()
+            );
           }
 
-          if (!clientId) {
-            errorCount++;
-            continue;
-          }
-
-
-          const amount = parseFloat(values[1]);
-          const hours = parseFloat(values[2]);
-
-          if (isNaN(amount) || isNaN(hours)) {
-            console.error("Invalid amount/hours:", values);
+          if (!client) {
+            console.warn("Skipping invoice; no matching client:", values[0]);
             errorCount++;
             continue;
           }
 
           const invoiceData = {
-            client_id: clientId,
-            amount: amount,                    // Amount column
-            hours_billed: hours,               // Hours Billed column
+            client_id: client.id,
+            user_id: user?.id || null,  // ✅ same user_id
+            amount: parseFloat(values[1]) || 0,
+            hours_billed: parseFloat(values[2]) || 0,
             invoice_date: values[3] || new Date().toISOString(),
-            due_date: values[4] || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-            status: values[5] || 'unpaid'
+            due_date:
+              values[4] ||
+              new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            status: values[5] || "unpaid",
           };
 
           try {
-            await axios.post(`${API}/invoices`, invoiceData);
+            await axios.post(`${API}/invoices`, invoiceData, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
             importedCount++;
           } catch (error) {
-            console.error('Error importing invoice:', error);
+            console.error("Error importing invoice:", error);
             errorCount++;
           }
         }
 
-        if (importedCount > 0) {
-          await fetchData();  // refresh invoices + clients
-          toast({
-            title: "Import Successful",
-            description: `Imported ${importedCount} invoices successfully${errorCount > 0 ? `. ${errorCount} rows had errors.` : '.'}`,
-          });
-        } else {
-          toast({
-            title: "Import Failed",
-            description: "No invoices could be imported. Please check your CSV format and client names.",
-            variant: "destructive",
-          });
-        }
+        // ✅ Reload data after all inserts
+        await fetchData();
+
+        toast({
+          title: importedCount > 0 ? "Import Successful" : "Import Failed",
+          description:
+            importedCount > 0
+              ? `Imported ${importedCount} invoices successfully${errorCount > 0 ? `. ${errorCount} rows had errors.` : "."
+              }`
+              : "No invoices could be imported. Please check your CSV format.",
+          variant: importedCount > 0 ? "default" : "destructive",
+        });
       } catch (error) {
-        console.error('Error parsing CSV:', error);
+        console.error("Error parsing CSV:", error);
         toast({
           title: "Import Error",
           description: "Failed to parse CSV file. Please check the format.",
@@ -322,8 +316,9 @@ Your Account Team`;
     };
 
     reader.readAsText(file);
-    event.target.value = ''; // Reset file input
+    event.target.value = ""; // Reset input
   };
+
 
   const handleInvoiceSaved = () => {
     setShowInvoiceModal(false);
