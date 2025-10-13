@@ -14,6 +14,7 @@ import ClientDrillthrough from './ClientDrillthrough';
 import { useToast } from './ui/use-toast';
 import { useCurrency } from "./CurrencyContext";
 
+
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
@@ -26,14 +27,6 @@ const ClientDetailsPage = ({ user }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Extract ?id=<clientId> from URL if present
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const clientIdFromURL = params.get('id');
-    if (clientIdFromURL) {
-      setSelectedClientId(clientIdFromURL);
-    }
-  }, [location.search]);
 
   const fetchClients = async () => {
     try {
@@ -73,10 +66,24 @@ const ClientDetailsPage = ({ user }) => {
   };
 
   useEffect(() => {
-    fetchClients();
-  }, []);
+    const loadData = async () => {
+      await fetchClients();
 
+      // after clients are fetched, check URL param
+      const params = new URLSearchParams(location.search);
+      const clientIdFromURL = params.get('id');
 
+      if (clientIdFromURL) {
+        setSelectedClientId(clientIdFromURL);
+      } else if (!selectedClientId && clients.length > 0) {
+        // fallback to first client if none selected
+        setSelectedClientId(clients[0].id);
+      }
+    };
+
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
 
 
   const filteredClients = clients.filter(client =>

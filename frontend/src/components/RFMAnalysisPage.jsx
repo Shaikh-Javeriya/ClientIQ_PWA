@@ -532,6 +532,7 @@ const RFMAnalysisPage = () => {
                                     <th className="py-2">R</th>
                                     <th className="py-2">F</th>
                                     <th className="py-2">M</th>
+                                    <th className="py-2"></th>
                                     <th className="py-2">Segment</th>
                                     <th className="py-2">Revenue</th>
                                     <th className="py-2">Last Project</th>
