@@ -48,17 +48,18 @@ const MainLayout = ({ user, onLogout, children }) => {
               </div>
 
               {/* Navigation */}
-              <nav className="hidden md:flex space-x-8">
+              <nav className="hidden md:flex space-x-4 lg:space-x-5">
                 {navigation.map((item) => {
                   const Icon = item.icon;
                   return (
                     <Link
                       key={item.name}
                       to={item.path}
-                      className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${isActive(item.path)
+                      className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-md text-[13px] font-medium transition-colors duration-200 ${
+                        isActive(item.path)
                         ? 'bg-blue-50 text-blue-700 border border-blue-200'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                        }`}
+                      }`}
                     >
                       <Icon className="w-4 h-4" />
                       <span>{item.name}</span>
