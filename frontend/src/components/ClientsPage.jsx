@@ -254,12 +254,15 @@ Your Account Team`;
     reader.onload = async (e) => {
       try {
         const csv = e.target.result;
-        const lines = csv.split('\n').filter(line => line.trim());
+
+        // ✅ Handle both comma and tab separators
+        const lines = csv.split(/\r?\n/).filter(line => line.trim());
+        const delimiter = lines[0].includes('\t') ? '\t' : ',';
 
         if (lines.length <= 1) {
           toast({
             title: "Import Error",
-            description: "CSV file appears to be empty or contains only headers",
+            description: "CSV file appears empty or missing data rows.",
             variant: "destructive",
           });
           return;
@@ -270,24 +273,26 @@ Your Account Team`;
         let importedCount = 0;
         let errorCount = 0;
 
+        // ✅ Skip header line (first row)
         for (let i = 1; i < lines.length; i++) {
           const line = lines[i].trim();
           if (!line) continue;
 
-          const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
-          if (values.length < 3) {
+          const values = line.split(delimiter).map(v => v.trim().replace(/"/g, ""));
+          if (values.length < 4) {
             errorCount++;
             continue;
           }
 
+          // Flexible mapping by index
           const clientData = {
             name: values[0] || `Client ${i}`,
-            tier: values[1] || 'SMB',
-            region: values[2] || 'North America',
-            contact_email: values[3] || '',
-            contact_phone: values[4] || '',
-            hourly_rate: parseFloat(values[5]) || 100,
-            user_id: user?.id || null,  // ✅ Always attach correct user_id
+            tier: values[1] || "SMB",
+            region: values[2] || "North America",
+            contact_email: values[3] || "",
+            contact_phone: values[4] || "",  // optional
+            hourly_rate: parseFloat(values[4] || values[5]) || 100, // handle if phone missing
+            user_id: user?.id || null,
           };
 
           try {
@@ -296,12 +301,11 @@ Your Account Team`;
             });
             importedCount++;
           } catch (error) {
-            console.error('Error importing client:', error);
+            console.error("Error importing client:", error.response?.data || error.message);
             errorCount++;
           }
         }
 
-        // ✅ Wait for backend to finish all inserts before refreshing
         await fetchClients();
 
         toast({
@@ -310,14 +314,14 @@ Your Account Team`;
             importedCount > 0
               ? `Imported ${importedCount} clients successfully${errorCount > 0 ? `. ${errorCount} rows had errors.` : "."
               }`
-              : "No clients could be imported. Please check your CSV format.",
+              : "No clients could be imported. Please check your CSV or TSV format.",
           variant: importedCount > 0 ? "default" : "destructive",
         });
       } catch (error) {
         console.error("Error parsing CSV:", error);
         toast({
           title: "Import Error",
-          description: "Failed to parse CSV file. Please check the format.",
+          description: "Failed to parse file. Please check CSV format.",
           variant: "destructive",
         });
       }
@@ -326,6 +330,7 @@ Your Account Team`;
     reader.readAsText(file);
     event.target.value = ""; // Reset file input
   };
+
 
 
   const getUniqueValues = (field) => {
