@@ -367,6 +367,56 @@ async def get_clients(current_user: dict = Depends(get_current_user)):
     except Exception as e:
         print(f"Error getting clients: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch clients")
+    
+# =========================================================
+# Create new client (POST)
+# =========================================================
+@api_router.post("/clients")
+async def create_client(client_data: dict, current_user: dict = Depends(get_current_user)):
+    """
+    Create a new client for the authenticated user.
+    """
+    try:
+        # Validate
+        name = client_data.get("name", "").strip()
+        if not name:
+            raise HTTPException(status_code=400, detail="Client name is required")
+
+        client_doc = {
+            "id": str(uuid.uuid4()),
+            "user_id": current_user["id"],
+            "name": name,
+            "tier": client_data.get("tier", ""),
+            "region": client_data.get("region", ""),
+            "contact_email": client_data.get("contact_email", ""),
+            "contact_phone": client_data.get("contact_phone", ""),
+            "hourly_rate": float(client_data.get("hourly_rate", 0) or 0),
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+
+        # Optional: prevent duplicates for same user
+        existing = await db.clients.find_one({
+            "user_id": current_user["id"],
+            "name": client_doc["name"]
+        })
+        if existing:
+            if "_id" in existing:
+                del existing["_id"]
+            return parse_from_mongo(existing)
+
+        client_dict = prepare_for_mongo(client_doc.copy())
+        await db.clients.insert_one(client_dict)
+
+        if "_id" in client_dict:
+            del client_dict["_id"]
+        return parse_from_mongo(client_doc)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error creating client: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create client")
+
 
 @api_router.put("/clients/{client_id}")
 async def update_client(client_id: str, client_data: dict, current_user: dict = Depends(get_current_user)):
