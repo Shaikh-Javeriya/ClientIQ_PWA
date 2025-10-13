@@ -1,0 +1,4 @@
+client id,amount,hours billed,invoice date,due date,status
+bcfa1a13-4a28-4005-9729-96c17e37afd5,250,10,9/14/2025,9/25/2025,paid
+d4f8d414-8c4d-4fad-bb60-27d512986d1b,480,12,10/11/2025,10/11/2025,paid
+4ee7ad12-5eec-4203-bc31-e5b241b2386e,250,10,5/6/2025,5/6/2025,paid
