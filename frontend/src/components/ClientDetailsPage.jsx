@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import ClientDrillthrough from './ClientDrillthrough';
 import { useToast } from './ui/use-toast';
 import { useCurrency } from "./CurrencyContext";
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -24,6 +25,16 @@ const ClientDetailsPage = ({ user }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Extract ?id=<clientId> from URL if present
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const clientIdFromURL = params.get('id');
+    if (clientIdFromURL) {
+      setSelectedClientId(clientIdFromURL);
+    }
+  }, [location.search]);
 
   const fetchClients = async () => {
     try {
@@ -66,13 +77,16 @@ const ClientDetailsPage = ({ user }) => {
     fetchClients();
   }, []);
 
+
+
+
   const filteredClients = clients.filter(client =>
     client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.client_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const { currency, locale, formatCurrency } = useCurrency();
-  
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-96">
