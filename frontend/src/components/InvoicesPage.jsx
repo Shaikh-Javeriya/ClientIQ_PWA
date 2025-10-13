@@ -240,7 +240,7 @@ Your Account Team`;
         let errorCount = 0;
 
         // ✅ Always refresh clients first (to ensure mapping is up-to-date)
-        await fetchClients();
+        await fetchData();
 
         for (let i = 1; i < lines.length; i++) {
           const line = lines[i].trim();
